@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Intercept",
+  "version": "1.0.0",
+  "description": "Manage request headers and URL redirects",
+  "permissions": [
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess",
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
