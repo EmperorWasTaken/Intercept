@@ -141,6 +141,11 @@ async function applyRules(profile) {
       const verifyRules = await chrome.declarativeNetRequest.getDynamicRules();
     } catch (error) {
       console.error('Error applying rules:', error);
+      chrome.runtime.sendMessage({ 
+        action: 'ruleError', 
+        error: error.message 
+      }).catch(() => {
+      });
     }
   }
 }
