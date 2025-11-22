@@ -17,7 +17,21 @@ chrome.runtime.onInstalled.addListener(async () => {
       activeProfileId: 'default'
     });
   }
+  
+  updateBadge();
 });
+
+async function updateBadge() {
+  const { globalEnabled } = await chrome.storage.local.get(['globalEnabled']);
+  
+  if (globalEnabled === false) {
+    chrome.action.setBadgeText({ text: '  ' });
+    chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
+  } else {
+    chrome.action.setBadgeText({ text: '  ' });
+    chrome.action.setBadgeBackgroundColor({ color: '#22c55e' });
+  }
+}
 
 async function loadActiveProfile() {
   const { profiles, activeProfileId, globalEnabled } = await chrome.storage.local.get(['profiles', 'activeProfileId', 'globalEnabled']);
@@ -28,6 +42,7 @@ async function loadActiveProfile() {
   
   if (globalEnabled === false) {
     await clearAllRules();
+    updateBadge();
     return;
   }
   
@@ -36,6 +51,8 @@ async function loadActiveProfile() {
   if (activeProfile) {
     await applyRules(activeProfile);
   }
+  
+  updateBadge();
 }
 
 async function clearAllRules() {
