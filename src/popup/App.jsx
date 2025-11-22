@@ -139,8 +139,20 @@ function App() {
     });
   }
 
-  function addFilter() {
-    const newFilter = createRequestFilter('*://*/*');
+  async function addFilter() {
+    let filterPattern = '*://*/*';
+    
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.url) {
+        const url = new URL(tab.url);
+        filterPattern = `.*://${url.hostname}/.*`;
+      }
+    } catch (error) {
+      console.error('Failed to get current tab URL:', error);
+    }
+    
+    const newFilter = createRequestFilter(filterPattern);
     updateCurrentProfile({
       filters: [...(currentProfile.filters || []), newFilter]
     });

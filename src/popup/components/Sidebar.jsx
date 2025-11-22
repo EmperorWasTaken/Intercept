@@ -13,8 +13,8 @@ export default function Sidebar({
   onManageProfiles
 }) {
   return (
-    <div className="w-64 bg-bg-secondary border-r border-border flex flex-col h-full">
-      <div className="border-b border-border">
+    <div className="w-64 bg-bg-secondary border-r border-border flex flex-col h-full overflow-y-auto">
+      <div className="border-b border-border shrink-0">
         <div 
           className={`flex items-center justify-between p-3 cursor-pointer hover:bg-bg-tertiary ${
             selectedItem?.type === 'profiles' ? 'bg-bg-tertiary border-l-2 border-primary' : ''
