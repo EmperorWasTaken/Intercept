@@ -20,9 +20,14 @@ chrome.runtime.onInstalled.addListener(async () => {
 });
 
 async function loadActiveProfile() {
-  const { profiles, activeProfileId } = await chrome.storage.local.get(['profiles', 'activeProfileId']);
+  const { profiles, activeProfileId, globalEnabled } = await chrome.storage.local.get(['profiles', 'activeProfileId', 'globalEnabled']);
   
   if (!profiles || !Array.isArray(profiles)) {
+    return;
+  }
+  
+  if (globalEnabled === false) {
+    await clearAllRules();
     return;
   }
   
@@ -30,6 +35,18 @@ async function loadActiveProfile() {
   
   if (activeProfile) {
     await applyRules(activeProfile);
+  }
+}
+
+async function clearAllRules() {
+  const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+  const ruleIdsToRemove = existingRules.map(r => r.id);
+  
+  if (ruleIdsToRemove.length > 0) {
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: ruleIdsToRemove,
+      addRules: []
+    });
   }
 }
 
@@ -80,28 +97,42 @@ async function applyRules(profile) {
     });
   
   profile.redirects
-    .filter(r => r.enabled)
+    .filter(r => r.enabled && r.from && r.to)
     .forEach(redirect => {
-      activeFilters.forEach(filter => {
-        rulesToAdd.push({
-          id: ruleId++,
-          priority: 1,
-          action: {
-            type: 'redirect',
-            redirect: { url: redirect.to }
-          },
-          condition: {
-            urlFilter: filter,
-            resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest']
-          }
-        });
-      });
+      const hasSubstitution = /\$\d/.test(redirect.to);
+      
+      const substitutionUrl = hasSubstitution 
+        ? redirect.to.replace(/\$(\d+)/g, '\\$1')
+        : redirect.to;
+      
+      const rule = {
+        id: ruleId++,
+        priority: 2,
+        action: {
+          type: 'redirect',
+          redirect: hasSubstitution 
+            ? { regexSubstitution: substitutionUrl }
+            : { url: redirect.to }
+        },
+        condition: {
+          regexFilter: redirect.from,
+          resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest']
+        }
+      };
+      
+      rulesToAdd.push(rule);
     });
   
   if (rulesToAdd.length > 0) {
-    await chrome.declarativeNetRequest.updateDynamicRules({
-      addRules: rulesToAdd
-    });
+    try {
+      await chrome.declarativeNetRequest.updateDynamicRules({
+        addRules: rulesToAdd
+      });
+      
+      const verifyRules = await chrome.declarativeNetRequest.getDynamicRules();
+    } catch (error) {
+      console.error('Error applying rules:', error);
+    }
   }
 }
 

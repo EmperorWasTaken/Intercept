@@ -170,13 +170,13 @@ function App() {
     const text = await file.text();
     const data = JSON.parse(text);
     
-    // Check if it's ModHeader format (array of profiles)
+    const existingProfiles = profiles;
+    let newProfiles = [];
+    
     if (Array.isArray(data)) {
-      // Convert ModHeader format to Intercept format
-      const convertedProfiles = data.map(modHeaderProfile => {
+      newProfiles = data.map(modHeaderProfile => {
         const profile = createProfileFactory(modHeaderProfile.title || 'Imported Profile');
         
-        // Convert headers
         profile.requestHeaders = (modHeaderProfile.headers || [])
           .filter(h => h.name)
           .map(h => ({
@@ -186,7 +186,6 @@ function App() {
             value: h.value || ''
           }));
         
-        // Convert URL redirects
         profile.redirects = (modHeaderProfile.urlReplacements || [])
           .filter(r => r.name && r.value)
           .map(r => ({
@@ -196,7 +195,6 @@ function App() {
             to: r.value
           }));
         
-        // Convert URL filters
         profile.filters = (modHeaderProfile.urlFilters || [])
           .filter(f => f.urlRegex)
           .map(f => ({
@@ -207,20 +205,17 @@ function App() {
         
         return profile;
       });
-      
-      await chrome.storage.local.set({
-        profiles: convertedProfiles,
-        activeProfileId: convertedProfiles[0].id
-      });
     } else {
-      // Native Intercept format
-      await chrome.storage.local.set({
-        profiles: data.profiles,
-        activeProfileId: data.activeProfileId || data.profiles[0].id
-      });
+      newProfiles = data.profiles || [];
     }
     
-    loadProfiles();
+    const combinedProfiles = [...existingProfiles, ...newProfiles];
+    await saveProfiles(combinedProfiles);
+    
+    if (newProfiles.length > 0) {
+      await chrome.storage.local.set({ activeProfileId: newProfiles[0].id });
+      setCurrentProfile(newProfiles[0]);
+    }
   }
 
   async function handleExport() {
