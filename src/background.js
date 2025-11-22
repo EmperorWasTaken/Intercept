@@ -77,6 +77,18 @@ async function applyRules(profile) {
     .filter(h => h.enabled && h.name && h.value)
     .forEach(header => {
       activeFilters.forEach(filter => {
+        const isRegexPattern = /[\[\](){}^$+?|\\]/.test(filter) || /\.\*/.test(filter);
+        
+        const condition = isRegexPattern
+          ? {
+              regexFilter: filter,
+              resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest']
+            }
+          : {
+              urlFilter: filter,
+              resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest']
+            };
+        
         rulesToAdd.push({
           id: ruleId++,
           priority: 1,
@@ -88,10 +100,7 @@ async function applyRules(profile) {
               value: header.value
             }]
           },
-          condition: {
-            urlFilter: filter,
-            resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest']
-          }
+          condition: condition
         });
       });
     });
