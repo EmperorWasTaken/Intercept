@@ -1,4 +1,7 @@
 # Intercept
+Manage HTTP request headers, URL redirects, and URL filters with multiple profiles.
+
+![Product Screen Shot][product-screenshot]
 
 ## Install
 1. Clone repository
@@ -21,3 +24,5 @@
    - Select the `/dist` folder from the repository
 5. ???
 6. Profit
+
+[product-screenshot]: images/image.png

@@ -15,9 +15,9 @@ export default defineConfig({
         }
         copyFileSync('manifest.json', 'dist/manifest.json');
         copyFileSync('src/background.js', 'dist/background.js');
-        copyFileSync('icons/twist16.png', 'dist/twist16.png');
-        copyFileSync('icons/twist48.png', 'dist/twist48.png');
-        copyFileSync('icons/twist128.png', 'dist/twist128.png');
+        copyFileSync('images/twist16.png', 'dist/twist16.png');
+        copyFileSync('images/twist48.png', 'dist/twist48.png');
+        copyFileSync('images/twist128.png', 'dist/twist128.png');
       }
     }
   ],
