@@ -1,6 +1,7 @@
 {
   "name": "intercept",
   "version": "1.0.0",
+  "type": "module",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -23,7 +24,11 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.17",
     "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.22",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.17",
     "vite": "^7.2.4"
   }
 }
