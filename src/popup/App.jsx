@@ -13,6 +13,19 @@ function App() {
   useEffect(() => {
     loadProfiles();
     loadGlobalEnabled();
+    
+    // Listen for rule errors from background script
+    const handleMessage = (message) => {
+      if (message.action === 'ruleError') {
+        alert(`Error applying rules: ${message.error}\n\nCheck your regex patterns for headers, redirects, and filters.`);
+      }
+    };
+    
+    chrome.runtime.onMessage.addListener(handleMessage);
+    
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleMessage);
+    };
   }, []);
 
   async function loadGlobalEnabled() {
@@ -179,13 +192,14 @@ function App() {
     const file = e.target.files[0];
     if (!file) return;
 
-    const text = await file.text();
-    const data = JSON.parse(text);
-    
-    const existingProfiles = profiles;
-    let newProfiles = [];
-    
-    if (Array.isArray(data)) {
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      
+      const existingProfiles = profiles;
+      let newProfiles = [];
+      
+      if (Array.isArray(data)) {
       newProfiles = data.map(modHeaderProfile => {
         const profile = createProfileFactory(modHeaderProfile.title || 'Imported Profile');
         
@@ -230,6 +244,10 @@ function App() {
     if (newProfiles.length > 0) {
       await chrome.storage.local.set({ activeProfileId: newProfiles[0].id });
       setCurrentProfile(newProfiles[0]);
+    }
+    } catch (error) {
+      alert('Invalid file format. Please select a valid JSON file.');
+      console.error('Import error:', error);
     }
   }
 
