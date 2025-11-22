@@ -221,6 +221,16 @@ function HeaderForm({ item, onUpdate, onDelete }) {
         />
       </FormField>
 
+      <FormField label="Comment (optional)">
+        <input
+          type="text"
+          value={item.comment || ''}
+          onChange={(e) => onUpdate(item.id, 'comment', e.target.value)}
+          placeholder=""
+          className="w-full bg-bg-secondary text-text-primary border border-border rounded-md px-3 py-2 focus:outline-none focus:border-primary"
+        />
+      </FormField>
+
       <div className="pt-4">
         <button
           onClick={() => onDelete(item.id)}
@@ -256,6 +266,16 @@ function RedirectForm({ item, onUpdate, onDelete }) {
         />
       </FormField>
 
+      <FormField label="Comment (optional)">
+        <input
+          type="text"
+          value={item.comment || ''}
+          onChange={(e) => onUpdate(item.id, 'comment', e.target.value)}
+          placeholder=""
+          className="w-full bg-bg-secondary text-text-primary border border-border rounded-md px-3 py-2 focus:outline-none focus:border-primary"
+        />
+      </FormField>
+
       <div className="pt-4">
         <button
           onClick={() => onDelete(item.id)}
@@ -279,6 +299,16 @@ function FilterForm({ item, onUpdate, onDelete }) {
           onChange={(e) => onUpdate(item.id, 'value', e.target.value)}
           placeholder="e.g., *://*.example.com/*"
           className="w-full bg-bg-secondary text-text-primary border border-border rounded-md px-3 py-2 focus:outline-none focus:border-primary font-mono text-sm"
+        />
+      </FormField>
+
+      <FormField label="Comment (optional)">
+        <input
+          type="text"
+          value={item.comment || ''}
+          onChange={(e) => onUpdate(item.id, 'comment', e.target.value)}
+          placeholder=""
+          className="w-full bg-bg-secondary text-text-primary border border-border rounded-md px-3 py-2 focus:outline-none focus:border-primary"
         />
       </FormField>
 

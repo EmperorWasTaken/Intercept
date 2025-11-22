@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Intercept",
   "version": "1.0.0",
-  "description": "Manage request headers and URL redirects",
+  "description": "Manage HTTP request headers, URL redirects, and URL filters with multiple profiles. Supports regex patterns and capture groups for advanced URL rewriting.",
   "permissions": [
     "declarativeNetRequest",
     "declarativeNetRequestWithHostAccess",

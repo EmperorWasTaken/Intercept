@@ -195,7 +195,8 @@ function App() {
             id: crypto.randomUUID(),
             enabled: h.enabled !== false,
             name: h.name,
-            value: h.value || ''
+            value: h.value || '',
+            comment: h.comment || ''
           }));
         
         profile.redirects = (modHeaderProfile.urlReplacements || [])
@@ -204,7 +205,8 @@ function App() {
             id: crypto.randomUUID(),
             enabled: r.enabled !== false,
             from: r.name,
-            to: r.value
+            to: r.value,
+            comment: r.comment || ''
           }));
         
         profile.filters = (modHeaderProfile.urlFilters || [])
@@ -212,7 +214,8 @@ function App() {
           .map(f => ({
             id: crypto.randomUUID(),
             enabled: f.enabled !== false,
-            value: f.urlRegex
+            value: f.urlRegex,
+            comment: f.comment || ''
           }));
         
         return profile;

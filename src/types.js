@@ -2,20 +2,23 @@ export const createRequestHeader = (name = '', value = '') => ({
   id: crypto.randomUUID(),
   enabled: true,
   name,
-  value
+  value,
+  comment: ''
 });
 
 export const createRedirect = (from = '', to = '') => ({
   id: crypto.randomUUID(),
   enabled: true,
   from,
-  to
+  to,
+  comment: ''
 });
 
 export const createRequestFilter = (value = '') => ({
   id: crypto.randomUUID(),
   enabled: true,
-  value
+  value,
+  comment: ''
 });
 
 export const createProfile = (name = 'New Profile') => ({

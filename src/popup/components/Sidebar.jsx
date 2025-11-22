@@ -139,6 +139,7 @@ function SidebarItem({ item, type, isSelected, onSelect, onToggleEnabled }) {
   };
 
   const getName = () => {
+    if (item.comment) return item.comment;
     if (type === 'header') return item.name || 'Unnamed Header';
     if (type === 'redirect') return 'Redirect';
     if (type === 'filter') return 'Filter';
