@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import ProfileSelector from './components/ProfileSelector';
 import Sidebar from './components/Sidebar';
 import DetailPanel from './components/DetailPanel';
@@ -9,7 +9,6 @@ function App() {
   const [currentProfile, setCurrentProfile] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [globalEnabled, setGlobalEnabled] = useState(true);
-  const updateTimeoutRef = useRef(null);
 
   useEffect(() => {
     loadProfiles();
@@ -51,10 +50,12 @@ function App() {
     setCurrentProfile(active);
   }
 
-  async function saveProfiles(updatedProfiles) {
+  async function saveProfiles(updatedProfiles, shouldUpdateRules = false) {
     await chrome.storage.local.set({ profiles: updatedProfiles });
     setProfiles(updatedProfiles);
-    notifyBackgroundToUpdate();
+    if (shouldUpdateRules) {
+      notifyBackgroundToUpdate();
+    }
   }
 
   async function switchProfile(profileId) {
@@ -97,12 +98,12 @@ function App() {
     }
   }
 
-  function updateCurrentProfile(updates) {
+  function updateCurrentProfile(updates, shouldUpdateRules = false) {
     const updated = profiles.map(p => 
       p.id === currentProfile.id ? { ...p, ...updates } : p
     );
     setCurrentProfile({ ...currentProfile, ...updates });
-    saveProfiles(updated);
+    saveProfiles(updated, shouldUpdateRules);
   }
 
   function addHeader() {
@@ -116,7 +117,8 @@ function App() {
     const updated = currentProfile.requestHeaders.map(h =>
       h.id === id ? { ...h, [field]: value } : h
     );
-    updateCurrentProfile({ requestHeaders: updated });
+    const shouldUpdate = field === 'enabled' || field === 'name' || field === 'value';
+    updateCurrentProfile({ requestHeaders: updated }, shouldUpdate);
     
     if (selectedItem?.item.id === id) {
       setSelectedItem({ ...selectedItem, item: { ...selectedItem.item, [field]: value } });
@@ -126,7 +128,7 @@ function App() {
   function deleteHeader(id) {
     updateCurrentProfile({
       requestHeaders: currentProfile.requestHeaders.filter(h => h.id !== id)
-    });
+    }, true);
   }
 
   function duplicateHeader(id) {
@@ -137,7 +139,7 @@ function App() {
       duplicated.comment = header.comment;
       updateCurrentProfile({
         requestHeaders: [...currentProfile.requestHeaders, duplicated]
-      });
+      }, true);
     }
   }
 
@@ -152,7 +154,8 @@ function App() {
     const updated = currentProfile.redirects.map(r =>
       r.id === id ? { ...r, [field]: value } : r
     );
-    updateCurrentProfile({ redirects: updated });
+    const shouldUpdate = field === 'enabled' || field === 'from' || field === 'to';
+    updateCurrentProfile({ redirects: updated }, shouldUpdate);
     
     if (selectedItem?.item.id === id) {
       setSelectedItem({ ...selectedItem, item: { ...selectedItem.item, [field]: value } });
@@ -162,7 +165,7 @@ function App() {
   function deleteRedirect(id) {
     updateCurrentProfile({
       redirects: currentProfile.redirects.filter(r => r.id !== id)
-    });
+    }, true);
   }
 
   function duplicateRedirect(id) {
@@ -173,7 +176,7 @@ function App() {
       duplicated.comment = redirect.comment;
       updateCurrentProfile({
         redirects: [...currentProfile.redirects, duplicated]
-      });
+      }, true);
     }
   }
 
@@ -193,14 +196,15 @@ function App() {
     const newFilter = createRequestFilter(filterPattern);
     updateCurrentProfile({
       filters: [...(currentProfile.filters || []), newFilter]
-    });
+    }, true);
   }
 
   function updateFilter(id, field, value) {
     const updated = currentProfile.filters.map(f =>
       f.id === id ? { ...f, [field]: value } : f
     );
-    updateCurrentProfile({ filters: updated });
+    const shouldUpdate = field === 'enabled' || field === 'value';
+    updateCurrentProfile({ filters: updated }, shouldUpdate);
     
     if (selectedItem?.item.id === id) {
       setSelectedItem({ ...selectedItem, item: { ...selectedItem.item, [field]: value } });
@@ -210,7 +214,7 @@ function App() {
   function deleteFilter(id) {
     updateCurrentProfile({
       filters: currentProfile.filters.filter(f => f.id !== id)
-    });
+    }, true);
   }
 
   function duplicateFilter(id) {
@@ -221,7 +225,7 @@ function App() {
       duplicated.comment = filter.comment;
       updateCurrentProfile({
         filters: [...currentProfile.filters, duplicated]
-      });
+      }, true);
     }
   }
 
@@ -276,7 +280,7 @@ function App() {
     }
     
     const combinedProfiles = [...existingProfiles, ...newProfiles];
-    await saveProfiles(combinedProfiles);
+    await saveProfiles(combinedProfiles, true);
     
     if (newProfiles.length > 0) {
       await chrome.storage.local.set({ activeProfileId: newProfiles[0].id });
@@ -299,13 +303,7 @@ function App() {
   }
 
   function notifyBackgroundToUpdate() {
-    if (updateTimeoutRef.current) {
-      clearTimeout(updateTimeoutRef.current);
-    }
-    
-    updateTimeoutRef.current = setTimeout(() => {
-      chrome.runtime.sendMessage({ action: 'updateRules' });
-    }, 500);
+    chrome.runtime.sendMessage({ action: 'updateRules' });
   }
 
   function handleSelectItem(item, type) {
