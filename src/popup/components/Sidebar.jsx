@@ -114,7 +114,7 @@ function SidebarSection({ title, items, type, selectedItem, onSelectItem, onAdd,
                 key={item.id}
                 item={item}
                 type={type}
-                isSelected={selectedItem?.id === item.id && selectedItem?.type === type}
+                isSelected={selectedItem?.item?.id === item.id && selectedItem?.type === type}
                 onSelect={() => onSelectItem(item, type)}
                 onToggleEnabled={onToggleEnabled}
               />
@@ -149,10 +149,10 @@ function SidebarItem({ item, type, isSelected, onSelect, onToggleEnabled }) {
   return (
     <div
       onClick={onSelect}
-      className={`px-3 py-2 cursor-pointer border-l-2 transition-colors ${
+      className={`px-3 py-2 cursor-pointer transition-colors ${
         isSelected
-          ? 'border-primary bg-bg-tertiary'
-          : 'border-transparent hover:bg-bg-tertiary'
+          ? 'bg-bg-tertiary border-l-2 border-primary'
+          : 'hover:bg-bg-tertiary'
       }`}
     >
       <div className="flex items-start gap-2">
