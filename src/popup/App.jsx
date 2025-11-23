@@ -128,6 +128,18 @@ function App() {
     });
   }
 
+  function duplicateHeader(id) {
+    const header = currentProfile.requestHeaders.find(h => h.id === id);
+    if (header) {
+      const duplicated = createRequestHeader(header.name, header.value);
+      duplicated.enabled = header.enabled;
+      duplicated.comment = header.comment;
+      updateCurrentProfile({
+        requestHeaders: [...currentProfile.requestHeaders, duplicated]
+      });
+    }
+  }
+
   function addRedirect() {
     const newRedirect = createRedirect('', '');
     updateCurrentProfile({
@@ -150,6 +162,18 @@ function App() {
     updateCurrentProfile({
       redirects: currentProfile.redirects.filter(r => r.id !== id)
     });
+  }
+
+  function duplicateRedirect(id) {
+    const redirect = currentProfile.redirects.find(r => r.id === id);
+    if (redirect) {
+      const duplicated = createRedirect(redirect.from, redirect.to);
+      duplicated.enabled = redirect.enabled;
+      duplicated.comment = redirect.comment;
+      updateCurrentProfile({
+        redirects: [...currentProfile.redirects, duplicated]
+      });
+    }
   }
 
   async function addFilter() {
@@ -186,6 +210,18 @@ function App() {
     updateCurrentProfile({
       filters: currentProfile.filters.filter(f => f.id !== id)
     });
+  }
+
+  function duplicateFilter(id) {
+    const filter = currentProfile.filters.find(f => f.id === id);
+    if (filter) {
+      const duplicated = createRequestFilter(filter.value);
+      duplicated.enabled = filter.enabled;
+      duplicated.comment = filter.comment;
+      updateCurrentProfile({
+        filters: [...currentProfile.filters, duplicated]
+      });
+    }
   }
 
   async function handleImport(e) {
@@ -293,6 +329,18 @@ function App() {
     }
     
     setSelectedItem(null);
+  }
+
+  function handleDuplicateItem(id) {
+    if (!selectedItem) return;
+    
+    if (selectedItem.type === 'header') {
+      duplicateHeader(id);
+    } else if (selectedItem.type === 'redirect') {
+      duplicateRedirect(id);
+    } else if (selectedItem.type === 'filter') {
+      duplicateFilter(id);
+    }
   }
 
   function handleToggleEnabled(id, type, checked) {
@@ -431,6 +479,7 @@ function App() {
           selectedItem={selectedItem}
           onUpdate={handleUpdateItem}
           onDelete={handleDeleteItem}
+          onDuplicate={handleDuplicateItem}
           profiles={profiles}
           currentProfile={currentProfile}
           onCreateProfile={handleCreateProfile}

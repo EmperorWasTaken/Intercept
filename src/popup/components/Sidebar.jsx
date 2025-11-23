@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { CirclePlus } from 'lucide-react';
 
 export default function Sidebar({ 
   headers, 
@@ -97,9 +98,9 @@ function SidebarSection({ title, items, type, selectedItem, onSelectItem, onAdd,
             e.stopPropagation();
             onAdd();
           }}
-          className="text-primary hover:text-primary-light text-lg w-6 h-6 flex items-center justify-center rounded hover:bg-bg-tertiary"
+          className="text-primary hover:text-primary-light w-6 h-6 flex items-center justify-center rounded hover:bg-bg-tertiary"
         >
-          +
+          <CirclePlus size={18} />
         </button>
       </div>
       

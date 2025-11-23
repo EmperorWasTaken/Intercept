@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { Trash, CopyPlus, CirclePlus, Pencil } from 'lucide-react';
 
 export default function DetailPanel({ 
   selectedItem, 
   onUpdate, 
   onDelete,
+  onDuplicate,
   profiles,
   currentProfile,
   onCreateProfile,
@@ -43,9 +45,9 @@ export default function DetailPanel({
           {type === 'filter' && 'URL Filter'}
         </h2>
 
-        {type === 'header' && <HeaderForm item={item} onUpdate={onUpdate} onDelete={onDelete} />}
-        {type === 'redirect' && <RedirectForm item={item} onUpdate={onUpdate} onDelete={onDelete} />}
-        {type === 'filter' && <FilterForm item={item} onUpdate={onUpdate} onDelete={onDelete} />}
+        {type === 'header' && <HeaderForm item={item} onUpdate={onUpdate} onDelete={onDelete} onDuplicate={onDuplicate} />}
+        {type === 'redirect' && <RedirectForm item={item} onUpdate={onUpdate} onDelete={onDelete} onDuplicate={onDuplicate} />}
+        {type === 'filter' && <FilterForm item={item} onUpdate={onUpdate} onDelete={onDelete} onDuplicate={onDuplicate} />}
       </div>
     </div>
   );
@@ -81,8 +83,9 @@ function ProfilesPanel({ profiles, currentProfile, onCreate, onUpdate, onDelete 
             />
             <button
               onClick={handleCreate}
-              className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-md text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-md text-sm font-medium transition-colors flex items-center gap-2"
             >
+              <CirclePlus size={16} />
               Create
             </button>
           </div>
@@ -168,9 +171,10 @@ function ProfileItem({ profile, isActive, onUpdate, onDelete, canDelete }) {
             <>
               <button
                 onClick={() => setIsEditing(true)}
-                className="px-3 py-1.5 bg-bg-tertiary hover:bg-bg-primary border border-border text-text-primary rounded-md text-sm transition-colors"
+                className="p-2 bg-bg-tertiary hover:bg-bg-primary border border-border text-text-primary rounded-md transition-colors"
+                title="Rename"
               >
-                Rename
+                <Pencil size={16} />
               </button>
               {canDelete && (
                 <button
@@ -179,9 +183,10 @@ function ProfileItem({ profile, isActive, onUpdate, onDelete, canDelete }) {
                       onDelete(profile.id);
                     }
                   }}
-                  className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm transition-colors"
+                  className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+                  title="Delete"
                 >
-                  Delete
+                  <Trash size={16} />
                 </button>
               )}
             </>
@@ -198,7 +203,7 @@ function ProfileItem({ profile, isActive, onUpdate, onDelete, canDelete }) {
   );
 }
 
-function HeaderForm({ item, onUpdate, onDelete }) {
+function HeaderForm({ item, onUpdate, onDelete, onDuplicate }) {
   return (
     <div className="space-y-4">
       <FormField label="Header Name">
@@ -231,19 +236,29 @@ function HeaderForm({ item, onUpdate, onDelete }) {
         />
       </FormField>
 
-      <div className="pt-4">
+      <div className="pt-4 flex gap-2">
+        <button
+          onClick={() => onDuplicate(item.id)}
+          className="px-4 py-2 bg-bg-tertiary hover:bg-bg-primary border border-border text-text-primary rounded-md text-sm font-medium transition-colors flex items-center gap-2"
+          title="Duplicate"
+        >
+          <CopyPlus size={16} />
+          Duplicate
+        </button>
         <button
           onClick={() => onDelete(item.id)}
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition-colors"
+          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-2"
+          title="Delete"
         >
-          Delete Header
+          <Trash size={16} />
+          Delete
         </button>
       </div>
     </div>
   );
 }
 
-function RedirectForm({ item, onUpdate, onDelete }) {
+function RedirectForm({ item, onUpdate, onDelete, onDuplicate }) {
   return (
     <div className="space-y-4">
       <FormField label="From URL">
@@ -276,19 +291,29 @@ function RedirectForm({ item, onUpdate, onDelete }) {
         />
       </FormField>
 
-      <div className="pt-4">
+      <div className="pt-4 flex gap-2">
+        <button
+          onClick={() => onDuplicate(item.id)}
+          className="px-4 py-2 bg-bg-tertiary hover:bg-bg-primary border border-border text-text-primary rounded-md text-sm font-medium transition-colors flex items-center gap-2"
+          title="Duplicate"
+        >
+          <CopyPlus size={16} />
+          Duplicate
+        </button>
         <button
           onClick={() => onDelete(item.id)}
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition-colors"
+          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-2"
+          title="Delete"
         >
-          Delete Redirect
+          <Trash size={16} />
+          Delete
         </button>
       </div>
     </div>
   );
 }
 
-function FilterForm({ item, onUpdate, onDelete }) {
+function FilterForm({ item, onUpdate, onDelete, onDuplicate }) {
   return (
     <div className="space-y-4">
 
@@ -312,12 +337,22 @@ function FilterForm({ item, onUpdate, onDelete }) {
         />
       </FormField>
 
-      <div className="pt-4">
+      <div className="pt-4 flex gap-2">
+        <button
+          onClick={() => onDuplicate(item.id)}
+          className="px-4 py-2 bg-bg-tertiary hover:bg-bg-primary border border-border text-text-primary rounded-md text-sm font-medium transition-colors flex items-center gap-2"
+          title="Duplicate"
+        >
+          <CopyPlus size={16} />
+          Duplicate
+        </button>
         <button
           onClick={() => onDelete(item.id)}
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition-colors"
+          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-2"
+          title="Delete"
         >
-          Delete Filter
+          <Trash size={16} />
+          Delete
         </button>
       </div>
     </div>

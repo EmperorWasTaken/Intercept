@@ -74,10 +74,12 @@ async function applyRules(profile) {
   const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
   const ruleIdsToRemove = existingRules.map(r => r.id);
   
-  await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: ruleIdsToRemove,
-    addRules: []
-  });
+  if (ruleIdsToRemove.length > 0) {
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: ruleIdsToRemove,
+      addRules: []
+    });
+  }
   
   const rulesToAdd = [];
   let ruleId = 1;
@@ -154,14 +156,14 @@ async function applyRules(profile) {
       await chrome.declarativeNetRequest.updateDynamicRules({
         addRules: rulesToAdd
       });
-      
-      const verifyRules = await chrome.declarativeNetRequest.getDynamicRules();
     } catch (error) {
       console.error('Error applying rules:', error);
+      
       chrome.runtime.sendMessage({ 
         action: 'ruleError', 
         error: error.message 
       }).catch(() => {
+
       });
     }
   }
