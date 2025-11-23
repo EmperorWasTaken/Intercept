@@ -6,6 +6,7 @@ export default function DetailPanel({
   onUpdate, 
   onDelete,
   onDuplicate,
+  onShowModal,
   profiles,
   currentProfile,
   onCreateProfile,
@@ -32,6 +33,7 @@ export default function DetailPanel({
         onCreate={onCreateProfile}
         onUpdate={onUpdateProfile}
         onDelete={onDeleteProfile}
+        onShowModal={onShowModal}
       />
     );
   }
@@ -53,7 +55,7 @@ export default function DetailPanel({
   );
 }
 
-function ProfilesPanel({ profiles, currentProfile, onCreate, onUpdate, onDelete }) {
+function ProfilesPanel({ profiles, currentProfile, onCreate, onUpdate, onDelete, onShowModal }) {
   const [newProfileName, setNewProfileName] = useState('');
 
   function handleCreate() {
@@ -101,6 +103,7 @@ function ProfilesPanel({ profiles, currentProfile, onCreate, onUpdate, onDelete 
                 isActive={profile.id === currentProfile.id}
                 onUpdate={onUpdate}
                 onDelete={onDelete}
+                onShowModal={onShowModal}
                 canDelete={profiles.length > 1}
               />
             ))}
@@ -111,7 +114,7 @@ function ProfilesPanel({ profiles, currentProfile, onCreate, onUpdate, onDelete 
   );
 }
 
-function ProfileItem({ profile, isActive, onUpdate, onDelete, canDelete }) {
+function ProfileItem({ profile, isActive, onUpdate, onDelete, onShowModal, canDelete }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(profile.name);
 
@@ -179,9 +182,12 @@ function ProfileItem({ profile, isActive, onUpdate, onDelete, canDelete }) {
               {canDelete && (
                 <button
                   onClick={() => {
-                    if (confirm(`Delete profile "${profile.name}"?`)) {
-                      onDelete(profile.id);
-                    }
+                    onShowModal(
+                      "Delete Profile",
+                      `Are you sure you want to delete "${profile.name}"? This action cannot be undone.`,
+                      () => onDelete(profile.id),
+                      "Delete"
+                    );
                   }}
                   className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
                   title="Delete"

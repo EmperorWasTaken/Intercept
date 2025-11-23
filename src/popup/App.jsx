@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import ProfileSelector from './components/ProfileSelector';
 import Sidebar from './components/Sidebar';
 import DetailPanel from './components/DetailPanel';
+import Modal from './components/Modal';
 import { createRequestHeader, createRedirect, createRequestFilter, createProfile as createProfileFactory } from '../types';
 
 function App() {
@@ -9,6 +10,7 @@ function App() {
   const [currentProfile, setCurrentProfile] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [globalEnabled, setGlobalEnabled] = useState(true);
+  const [modal, setModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
 
   useEffect(() => {
     loadProfiles();
@@ -79,23 +81,36 @@ function App() {
     setSelectedItem(null);
   }
 
+  function showModal(title, message, onConfirm, confirmText = 'Confirm', confirmStyle = 'danger') {
+    setModal({ isOpen: true, title, message, onConfirm, confirmText, confirmStyle });
+  }
+
+  function closeModal() {
+    setModal({ isOpen: false, title: '', message: '', onConfirm: null });
+  }
+
   async function deleteProfile(profileId) {
     if (profiles.length === 1) {
       alert('Cannot delete the last profile!');
       return;
     }
 
-    if (!confirm('Delete this profile?')) return;
+    showModal(
+      'Delete Profile',
+      'Are you sure you want to delete this profile? This action cannot be undone.',
+      async () => {
+        const updated = profiles.filter(p => p.id !== profileId);
+        await saveProfiles(updated);
 
-    const updated = profiles.filter(p => p.id !== profileId);
-    await saveProfiles(updated);
-
-    if (profileId === currentProfile.id) {
-      const newActive = updated[0];
-      await chrome.storage.local.set({ activeProfileId: newActive.id });
-      setCurrentProfile(newActive);
-      setSelectedItem(null);
-    }
+        if (profileId === currentProfile.id) {
+          const newActive = updated[0];
+          await chrome.storage.local.set({ activeProfileId: newActive.id });
+          setCurrentProfile(newActive);
+          setSelectedItem(null);
+        }
+      },
+      'Delete'
+    );
   }
 
   function updateCurrentProfile(updates, shouldUpdateRules = false) {
@@ -485,6 +500,7 @@ function App() {
           onUpdate={handleUpdateItem}
           onDelete={handleDeleteItem}
           onDuplicate={handleDuplicateItem}
+          onShowModal={showModal}
           profiles={profiles}
           currentProfile={currentProfile}
           onCreateProfile={handleCreateProfile}
@@ -492,6 +508,16 @@ function App() {
           onDeleteProfile={handleDeleteProfileFromPanel}
         />
       </div>
+
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        message={modal.message}
+        onConfirm={modal.onConfirm}
+        confirmText={modal.confirmText}
+        confirmStyle={modal.confirmStyle}
+      />
     </div>
   );
 }
