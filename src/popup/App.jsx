@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ProfileSelector from './components/ProfileSelector';
 import Sidebar from './components/Sidebar';
 import DetailPanel from './components/DetailPanel';
@@ -9,6 +9,7 @@ function App() {
   const [currentProfile, setCurrentProfile] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [globalEnabled, setGlobalEnabled] = useState(true);
+  const updateTimeoutRef = useRef(null);
 
   useEffect(() => {
     loadProfiles();
@@ -298,7 +299,13 @@ function App() {
   }
 
   function notifyBackgroundToUpdate() {
-    chrome.runtime.sendMessage({ action: 'updateRules' });
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+    
+    updateTimeoutRef.current = setTimeout(() => {
+      chrome.runtime.sendMessage({ action: 'updateRules' });
+    }, 500);
   }
 
   function handleSelectItem(item, type) {

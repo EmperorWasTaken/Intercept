@@ -79,6 +79,8 @@ async function applyRules(profile) {
       removeRuleIds: ruleIdsToRemove,
       addRules: []
     });
+    
+    await new Promise(resolve => setTimeout(resolve, 50));
   }
   
   const rulesToAdd = [];
@@ -158,13 +160,6 @@ async function applyRules(profile) {
       });
     } catch (error) {
       console.error('Error applying rules:', error);
-      
-      chrome.runtime.sendMessage({ 
-        action: 'ruleError', 
-        error: error.message 
-      }).catch(() => {
-
-      });
     }
   }
 }

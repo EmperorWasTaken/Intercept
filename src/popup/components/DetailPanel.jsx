@@ -227,12 +227,12 @@ function HeaderForm({ item, onUpdate, onDelete, onDuplicate }) {
       </FormField>
 
       <FormField label="Comment (optional)">
-        <input
-          type="text"
+        <textarea
           value={item.comment || ''}
           onChange={(e) => onUpdate(item.id, 'comment', e.target.value)}
           placeholder=""
-          className="w-full bg-bg-secondary text-text-primary border border-border rounded-md px-3 py-2 focus:outline-none focus:border-primary"
+          rows={3}
+          className="w-full bg-bg-secondary text-text-primary border border-border rounded-md px-3 py-2 focus:outline-none focus:border-primary resize-y"
         />
       </FormField>
 
@@ -282,12 +282,12 @@ function RedirectForm({ item, onUpdate, onDelete, onDuplicate }) {
       </FormField>
 
       <FormField label="Comment (optional)">
-        <input
-          type="text"
+        <textarea
           value={item.comment || ''}
           onChange={(e) => onUpdate(item.id, 'comment', e.target.value)}
           placeholder=""
-          className="w-full bg-bg-secondary text-text-primary border border-border rounded-md px-3 py-2 focus:outline-none focus:border-primary"
+          rows={3}
+          className="w-full bg-bg-secondary text-text-primary border border-border rounded-md px-3 py-2 focus:outline-none focus:border-primary resize-y"
         />
       </FormField>
 
@@ -328,12 +328,12 @@ function FilterForm({ item, onUpdate, onDelete, onDuplicate }) {
       </FormField>
 
       <FormField label="Comment (optional)">
-        <input
-          type="text"
+        <textarea
           value={item.comment || ''}
           onChange={(e) => onUpdate(item.id, 'comment', e.target.value)}
           placeholder=""
-          className="w-full bg-bg-secondary text-text-primary border border-border rounded-md px-3 py-2 focus:outline-none focus:border-primary"
+          rows={3}
+          className="w-full bg-bg-secondary text-text-primary border border-border rounded-md px-3 py-2 focus:outline-none focus:border-primary resize-y"
         />
       </FormField>
 
