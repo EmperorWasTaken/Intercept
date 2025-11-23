@@ -15,9 +15,16 @@ export default defineConfig({
         }
         copyFileSync('manifest.json', 'dist/manifest.json');
         copyFileSync('src/background.js', 'dist/background.js');
-        copyFileSync('images/twist16.png', 'dist/twist16.png');
-        copyFileSync('images/twist48.png', 'dist/twist48.png');
-        copyFileSync('images/twist128.png', 'dist/twist128.png');
+        
+        if (!existsSync('dist/images')) {
+          mkdirSync('dist/images');
+        }
+        copyFileSync('images/logo_enabled_16.png', 'dist/images/logo_enabled_16.png');
+        copyFileSync('images/logo_enabled_48.png', 'dist/images/logo_enabled_48.png');
+        copyFileSync('images/logo_enabled_128.png', 'dist/images/logo_enabled_128.png');
+        copyFileSync('images/logo_disabled_16.png', 'dist/images/logo_disabled_16.png');
+        copyFileSync('images/logo_disabled_48.png', 'dist/images/logo_disabled_48.png');
+        copyFileSync('images/logo_disabled_128.png', 'dist/images/logo_disabled_128.png');
       }
     }
   ],

@@ -25,11 +25,21 @@ async function updateBadge() {
   const { globalEnabled } = await chrome.storage.local.get(['globalEnabled']);
   
   if (globalEnabled === false) {
-    chrome.action.setBadgeText({ text: '  ' });
-    chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
+    chrome.action.setIcon({
+      path: {
+        "16": "images/logo_disabled_16.png",
+        "48": "images/logo_disabled_48.png",
+        "128": "images/logo_disabled_128.png"
+      }
+    });
   } else {
-    chrome.action.setBadgeText({ text: '  ' });
-    chrome.action.setBadgeBackgroundColor({ color: '#22c55e' });
+    chrome.action.setIcon({
+      path: {
+        "16": "images/logo_enabled_16.png",
+        "48": "images/logo_enabled_48.png",
+        "128": "images/logo_enabled_128.png"
+      }
+    });
   }
 }
 
