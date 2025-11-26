@@ -91,11 +91,21 @@ async function applyRules(profile) {
         addRules: []
       });
       
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+    
+    const verifyRemoval = await chrome.declarativeNetRequest.getDynamicRules();
+    if (verifyRemoval.length > 0) {
+      console.error('Intercept: Rules still present after removal, retrying...');
+      await chrome.declarativeNetRequest.updateDynamicRules({
+        removeRuleIds: verifyRemoval.map(r => r.id),
+        addRules: []
+      });
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
     
     const rulesToAdd = [];
-    let ruleId = 1000;
+    let ruleId = Math.floor(Date.now() / 1000);
   
     const EXCLUDED_DOMAINS = [
       "microsoft.com",
