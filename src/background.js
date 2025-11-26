@@ -96,46 +96,58 @@ async function applyRules(profile) {
   const rulesToAdd = [];
   let ruleId = 1;
   
+  const EXCLUDED_DOMAINS = [
+    "microsoft.com",
+    "www.microsoft.com",
+    "edge.microsoft.com",
+    "login.microsoftonline.com",
+    "msedge.net",
+    "msedge.api.cdp.microsoft.com"
+  ];
+
   const activeFilters = (profile.filters || [])
     .filter(f => f.enabled && f.value)
     .map(f => f.value);
   
-  if (activeFilters.length === 0) {
-    activeFilters.push('*://*/*');
-  }
   
-  profile.requestHeaders
-    .filter(h => h.enabled && h.name && h.value)
-    .forEach(header => {
-      activeFilters.forEach(filter => {
-        const isRegexPattern = /[\[\](){}^$+?|\\]/.test(filter) || /\.\*/.test(filter);
-        
-        const condition = isRegexPattern
-          ? {
-              regexFilter: filter,
-              resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest']
-            }
-          : {
-              urlFilter: filter,
-              resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest']
-            };
-        
-        rulesToAdd.push({
-          id: ruleId++,
-          priority: 1,
-          action: {
-            type: 'modifyHeaders',
-            requestHeaders: [{
-              header: header.name,
-              operation: 'set',
-              value: header.value
-            }]
-          },
-          condition: condition
+  if (activeFilters.length === 0) {
+    console.warn("Intercept: No active filters defined. Skipping rule creation to avoid global header modifications.");
+  }
+  if(activeFilters.length > 0) {
+    profile.requestHeaders
+      .filter(h => h.enabled && h.name && h.value)
+      .forEach(header => {
+        activeFilters.forEach(filter => {
+          const isRegexPattern = /[\[\](){}^$+?|\\]/.test(filter) || /\.\*/.test(filter);
+          
+          const condition = isRegexPattern
+            ? {
+                regexFilter: filter,
+                resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest'],
+                excludedDomains: EXCLUDED_DOMAINS
+              }
+            : {
+                urlFilter: filter,
+                resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest'],
+                excludedDomains: EXCLUDED_DOMAINS
+              };
+          
+          rulesToAdd.push({
+            id: ruleId++,
+            priority: 1,
+            action: {
+              type: 'modifyHeaders',
+              requestHeaders: [{
+                header: header.name,
+                operation: 'set',
+                value: header.value
+              }]
+            },
+            condition: condition
+          });
         });
       });
-    });
-  
+  }
   profile.redirects
     .filter(r => r.enabled && r.from && r.to)
     .forEach(redirect => {
@@ -156,7 +168,8 @@ async function applyRules(profile) {
         },
         condition: {
           regexFilter: redirect.from,
-          resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest']
+          resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest'],
+          excludedDomains: EXCLUDED_DOMAINS
         }
       };
       
