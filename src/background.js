@@ -81,41 +81,39 @@ chrome.runtime.onStartup.addListener(loadActiveProfile);
 loadActiveProfile();
 
 async function applyRules(profile) {
-  const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
-  const ruleIdsToRemove = existingRules.map(r => r.id);
-  
-  if (ruleIdsToRemove.length > 0) {
-    await chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: ruleIdsToRemove,
-      addRules: []
-    });
+  try {
+    const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+    const ruleIdsToRemove = existingRules.map(r => r.id);
     
-    await new Promise(resolve => setTimeout(resolve, 50));
-  }
+    if (ruleIdsToRemove.length > 0) {
+      await chrome.declarativeNetRequest.updateDynamicRules({
+        removeRuleIds: ruleIdsToRemove,
+        addRules: []
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    const rulesToAdd = [];
+    let ruleId = 1000;
   
-  const rulesToAdd = [];
-  let ruleId = 1;
-  
-  const EXCLUDED_DOMAINS = [
-    "microsoft.com",
-    "www.microsoft.com",
-    "edge.microsoft.com",
-    "login.microsoftonline.com",
-    "msedge.net",
-    "msedge.api.cdp.microsoft.com"
-  ];
-
-  const activeFilters = (profile.filters || [])
-    .filter(f => f.enabled && f.value)
-    .map(f => f.value);
-  
-  
-  if (activeFilters.length === 0) {
-    activeFilters.push('*://*/*');
-    //TODO split filters and header setters
-    //console.warn("Intercept: No active filters defined. Skipping rule creation to avoid global header modifications.");
-  }
-  if(activeFilters.length > 0) {
+    const EXCLUDED_DOMAINS = [
+      "microsoft.com",
+      "www.microsoft.com",
+      "edge.microsoft.com",
+      "login.microsoftonline.com",
+      "msedge.net",
+      "msedge.api.cdp.microsoft.com"
+    ];
+    
+    const activeFilters = (profile.filters || [])
+      .filter(f => f.enabled && f.value)
+      .map(f => f.value);
+    
+    if (activeFilters.length === 0) {
+      activeFilters.push('*://*/*');
+    }
+    
     profile.requestHeaders
       .filter(h => h.enabled && h.name && h.value)
       .forEach(header => {
@@ -149,42 +147,53 @@ async function applyRules(profile) {
           });
         });
       });
-  }
-  profile.redirects
-    .filter(r => r.enabled && r.from && r.to)
-    .forEach(redirect => {
-      const hasSubstitution = /\$\d/.test(redirect.to);
-      
-      const substitutionUrl = hasSubstitution 
-        ? redirect.to.replace(/\$(\d+)/g, '\\$1')
-        : redirect.to;
-      
-      const rule = {
-        id: ruleId++,
-        priority: 2,
-        action: {
-          type: 'redirect',
-          redirect: hasSubstitution 
-            ? { regexSubstitution: substitutionUrl }
-            : { url: redirect.to }
-        },
-        condition: {
-          regexFilter: redirect.from,
+    
+    profile.redirects
+      .filter(r => r.enabled && r.from && r.to)
+      .forEach(redirect => {
+        const hasSubstitution = /\$\d/.test(redirect.to);
+        
+        const substitutionUrl = hasSubstitution 
+          ? redirect.to.replace(/\$(\d+)/g, '\\$1')
+          : redirect.to;
+        
+        const rule = {
+          id: ruleId++,
+          priority: 2,
+          action: {
+            type: 'redirect',
+            redirect: hasSubstitution 
+              ? { regexSubstitution: substitutionUrl }
+              : { url: redirect.to }
+          },
+          condition: {
+            regexFilter: redirect.from,
           resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest'],
           excludedDomains: EXCLUDED_DOMAINS
-        }
-      };
-      
-      rulesToAdd.push(rule);
-    });
-  
-  if (rulesToAdd.length > 0) {
-    try {
+          }
+        };
+        
+        rulesToAdd.push(rule);
+      });
+    
+    if (rulesToAdd.length > 0) {
       await chrome.declarativeNetRequest.updateDynamicRules({
         addRules: rulesToAdd
       });
-    } catch (error) {
-      console.error('Error applying rules:', error);
+      console.log(`Intercept: Applied ${rulesToAdd.length} rules`);
+    }
+  } catch (error) {
+    console.error('Intercept: Error applying rules:', error);
+    try {
+      const rules = await chrome.declarativeNetRequest.getDynamicRules();
+      if (rules.length > 0) {
+        await chrome.declarativeNetRequest.updateDynamicRules({
+          removeRuleIds: rules.map(r => r.id),
+          addRules: []
+        });
+      }
+    } catch (cleanupError) {
+      console.error('Intercept: Error during cleanup:', cleanupError);
     }
   }
 }
