@@ -111,7 +111,9 @@ async function applyRules(profile) {
   
   
   if (activeFilters.length === 0) {
-    console.warn("Intercept: No active filters defined. Skipping rule creation to avoid global header modifications.");
+    activeFilters.push('*://*/*');
+    //TODO split filters and header setters
+    //console.warn("Intercept: No active filters defined. Skipping rule creation to avoid global header modifications.");
   }
   if(activeFilters.length > 0) {
     profile.requestHeaders
