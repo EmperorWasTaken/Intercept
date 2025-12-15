@@ -28,29 +28,47 @@ export async function loadProfile(profileId) {
 }
 
 export async function loadAllProfiles() {
-  const { profileIds } = await chrome.storage.sync.get('profileIds');
-  if (!profileIds || profileIds.length === 0) return [];
-  
-  const keys = profileIds.map(id => `profile_${id}`);
-  const data = await chrome.storage.sync.get(keys);
-  
-  const profiles = [];
-  for (const key of keys) {
-    const profile = decompressProfile(data[key]);
-    if (profile) {
-      profiles.push(profile);
+  try {
+    const { profileIds } = await chrome.storage.sync.get('profileIds');
+    
+    if (!profileIds || profileIds.length === 0) {
+      return [];
     }
+    
+    const uniqueIds = [...new Set(profileIds)];
+    
+    if (uniqueIds.length !== profileIds.length) {
+      await chrome.storage.sync.set({ profileIds: uniqueIds });
+    }
+    
+    const keys = uniqueIds.map(id => `profile_${id}`);
+    const data = await chrome.storage.sync.get(keys);
+    
+    const profiles = [];
+    for (const key of keys) {
+      const profile = decompressProfile(data[key]);
+      if (profile) {
+        profiles.push(profile);
+      }
+    }
+    
+    return profiles;
+  } catch (error) {
+    console.error('Failed to load profiles:', error);
+    return [];
   }
-  
-  return profiles;
 }
 
 export async function saveAllProfiles(profiles) {
-  const profileIds = profiles.map(p => p.id);
+  const uniqueProfiles = profiles.filter((profile, index, self) =>
+    index === self.findIndex(p => p.id === profile.id)
+  );
+  
+  const profileIds = uniqueProfiles.map(p => p.id);
   
   await chrome.storage.sync.set({ profileIds });
   
-  const savePromises = profiles.map(profile => saveProfile(profile));
+  const savePromises = uniqueProfiles.map(profile => saveProfile(profile));
   await Promise.all(savePromises);
 }
 
@@ -81,28 +99,33 @@ export async function setGlobalEnabled(enabled) {
 }
 
 export async function migrateFromLocalStorage() {
-  const { migrated } = await chrome.storage.sync.get('migrated');
-  if (migrated) return;
-  
-  console.log('Migrating from local storage to sync storage...');
-  
-  const localData = await chrome.storage.local.get(['profiles', 'activeProfileId', 'globalEnabled']);
-  
-  if (localData.profiles && localData.profiles.length > 0) {
-    await saveAllProfiles(localData.profiles);
+  try {
+    const { migrated } = await chrome.storage.sync.get('migrated');
+    if (migrated) return;
     
-    if (localData.activeProfileId) {
-      await setActiveProfileId(localData.activeProfileId);
+    console.log('Migrating from local storage to sync storage...');
+    
+    const localData = await chrome.storage.local.get(['profiles', 'activeProfileId', 'globalEnabled']);
+    
+    if (localData.profiles && localData.profiles.length > 0) {
+      await saveAllProfiles(localData.profiles);
+      
+      if (localData.activeProfileId) {
+        await setActiveProfileId(localData.activeProfileId);
+      }
+      
+      if (localData.globalEnabled !== undefined) {
+        await setGlobalEnabled(localData.globalEnabled);
+      }
+      
+      console.log(`Migrated ${localData.profiles.length} profiles to sync storage`);
     }
     
-    if (localData.globalEnabled !== undefined) {
-      await setGlobalEnabled(localData.globalEnabled);
-    }
-    
-    console.log(`Migrated ${localData.profiles.length} profiles to sync storage`);
+    await chrome.storage.sync.set({ migrated: true });
+  } catch (error) {
+    console.error('Migration failed:', error);
+    await chrome.storage.sync.set({ migrated: true });
   }
-  
-  await chrome.storage.sync.set({ migrated: true });
 }
 
 export async function getStorageInfo() {
