@@ -74,6 +74,40 @@ export async function applyRules(profile) {
         });
       });
     
+    profile.responseHeaders
+      ?.filter(h => h.enabled && h.name && h.value)
+      .forEach(header => {
+        activeFilters.forEach(filter => {
+          const isRegexPattern = /[\[\](){}^$+?|\\]/.test(filter) || /\.\*/.test(filter);
+          
+          const condition = isRegexPattern
+            ? {
+                regexFilter: filter,
+                resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest'],
+                excludedDomains: EXCLUDED_DOMAINS
+              }
+            : {
+                urlFilter: filter,
+                resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest'],
+                excludedDomains: EXCLUDED_DOMAINS
+              };
+          
+          rulesToAdd.push({
+            id: ruleId++,
+            priority: 1,
+            action: {
+              type: 'modifyHeaders',
+              responseHeaders: [{
+                header: header.name,
+                operation: 'set',
+                value: header.value
+              }]
+            },
+            condition: condition
+          });
+        });
+      });
+    
     profile.redirects
       .filter(r => r.enabled && r.from && r.to)
       .forEach(redirect => {

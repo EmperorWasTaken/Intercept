@@ -5,6 +5,7 @@ const defaultProfile = {
   name: 'Default Profile',
   active: true,
   requestHeaders: [],
+  responseHeaders: [],
   redirects: [],
   filters: []
 };

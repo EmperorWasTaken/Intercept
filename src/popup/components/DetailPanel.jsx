@@ -43,11 +43,13 @@ export default function DetailPanel({
       <div className="max-w-2xl">
         <h2 className="text-lg font-semibold text-text-primary mb-6">
           {type === 'header' && 'Request Header'}
+          {type === 'responseHeader' && 'Response Header'}
           {type === 'redirect' && 'URL Redirect'}
           {type === 'filter' && 'URL Filter'}
         </h2>
 
-        {type === 'header' && <HeaderForm item={item} onUpdate={onUpdate} onDelete={onDelete} onDuplicate={onDuplicate} />}
+        {type === 'header' && <HeaderForm item={item} onUpdate={onUpdate} onDelete={onDelete} onDuplicate={onDuplicate} isResponse={false} />}
+        {type === 'responseHeader' && <HeaderForm item={item} onUpdate={onUpdate} onDelete={onDelete} onDuplicate={onDuplicate} isResponse={true} />}
         {type === 'redirect' && <RedirectForm item={item} onUpdate={onUpdate} onDelete={onDelete} onDuplicate={onDuplicate} />}
         {type === 'filter' && <FilterForm item={item} onUpdate={onUpdate} onDelete={onDelete} onDuplicate={onDuplicate} />}
       </div>
@@ -209,7 +211,10 @@ function ProfileItem({ profile, isActive, onUpdate, onDelete, onShowModal, canDe
   );
 }
 
-function HeaderForm({ item, onUpdate, onDelete, onDuplicate }) {
+function HeaderForm({ item, onUpdate, onDelete, onDuplicate, isResponse }) {
+  const namePlaceholder = isResponse ? "e.g., Access-Control-Allow-Origin" : "e.g., Authorization";
+  const valuePlaceholder = isResponse ? "e.g., *" : "e.g., Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+  
   return (
     <div className="space-y-4">
       <FormField label="Header Name">
@@ -217,7 +222,7 @@ function HeaderForm({ item, onUpdate, onDelete, onDuplicate }) {
           type="text"
           value={item.name}
           onChange={(e) => onUpdate(item.id, 'name', e.target.value)}
-          placeholder="e.g., Authorization"
+          placeholder={namePlaceholder}
           className="w-full bg-bg-secondary text-text-primary border border-border rounded-md px-3 py-2 focus:outline-none focus:border-primary"
         />
       </FormField>
@@ -227,7 +232,7 @@ function HeaderForm({ item, onUpdate, onDelete, onDuplicate }) {
           type="text"
           value={item.value}
           onChange={(e) => onUpdate(item.id, 'value', e.target.value)}
-          placeholder="e.g., Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          placeholder={valuePlaceholder}
           className="w-full bg-bg-secondary text-text-primary border border-border rounded-md px-3 py-2 focus:outline-none focus:border-primary font-mono text-sm"
         />
       </FormField>

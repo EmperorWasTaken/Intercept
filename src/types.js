@@ -6,6 +6,14 @@ export const createRequestHeader = (name = '', value = '') => ({
   comment: ''
 });
 
+export const createResponseHeader = (name = '', value = '') => ({
+  id: crypto.randomUUID(),
+  enabled: true,
+  name,
+  value,
+  comment: ''
+});
+
 export const createRedirect = (from = '', to = '') => ({
   id: crypto.randomUUID(),
   enabled: true,
@@ -26,6 +34,7 @@ export const createProfile = (name = 'New Profile') => ({
   name,
   active: false,
   requestHeaders: [],
+  responseHeaders: [],
   redirects: [],
   filters: []
 });

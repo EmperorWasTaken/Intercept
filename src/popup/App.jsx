@@ -3,7 +3,7 @@ import ProfileSelector from './components/ProfileSelector';
 import Sidebar from './components/Sidebar';
 import DetailPanel from './components/DetailPanel';
 import Modal from './components/Modal';
-import { createRequestHeader, createRedirect, createRequestFilter, createProfile as createProfileFactory } from '../types';
+import { createRequestHeader, createResponseHeader, createRedirect, createRequestFilter, createProfile as createProfileFactory } from '../types';
 
 function App() {
   const [profiles, setProfiles] = useState([]);
@@ -154,6 +154,43 @@ function App() {
       duplicated.comment = header.comment;
       updateCurrentProfile({
         requestHeaders: [...currentProfile.requestHeaders, duplicated]
+      }, true);
+    }
+  }
+
+  function addResponseHeader() {
+    const newHeader = createResponseHeader('', '');
+    updateCurrentProfile({
+      responseHeaders: [...(currentProfile.responseHeaders || []), newHeader]
+    });
+  }
+
+  function updateResponseHeader(id, field, value) {
+    const updated = currentProfile.responseHeaders.map(h =>
+      h.id === id ? { ...h, [field]: value } : h
+    );
+    const shouldUpdate = field === 'enabled' || field === 'name' || field === 'value';
+    updateCurrentProfile({ responseHeaders: updated }, shouldUpdate);
+    
+    if (selectedItem?.item.id === id) {
+      setSelectedItem({ ...selectedItem, item: { ...selectedItem.item, [field]: value } });
+    }
+  }
+
+  function deleteResponseHeader(id) {
+    updateCurrentProfile({
+      responseHeaders: currentProfile.responseHeaders.filter(h => h.id !== id)
+    }, true);
+  }
+
+  function duplicateResponseHeader(id) {
+    const header = currentProfile.responseHeaders.find(h => h.id === id);
+    if (header) {
+      const duplicated = createResponseHeader(header.name, header.value);
+      duplicated.enabled = header.enabled;
+      duplicated.comment = header.comment;
+      updateCurrentProfile({
+        responseHeaders: [...currentProfile.responseHeaders, duplicated]
       }, true);
     }
   }
@@ -330,6 +367,8 @@ function App() {
     
     if (selectedItem.type === 'header') {
       updateHeader(id, field, value);
+    } else if (selectedItem.type === 'responseHeader') {
+      updateResponseHeader(id, field, value);
     } else if (selectedItem.type === 'redirect') {
       updateRedirect(id, field, value);
     } else if (selectedItem.type === 'filter') {
@@ -342,6 +381,8 @@ function App() {
     
     if (selectedItem.type === 'header') {
       deleteHeader(id);
+    } else if (selectedItem.type === 'responseHeader') {
+      deleteResponseHeader(id);
     } else if (selectedItem.type === 'redirect') {
       deleteRedirect(id);
     } else if (selectedItem.type === 'filter') {
@@ -356,6 +397,8 @@ function App() {
     
     if (selectedItem.type === 'header') {
       duplicateHeader(id);
+    } else if (selectedItem.type === 'responseHeader') {
+      duplicateResponseHeader(id);
     } else if (selectedItem.type === 'redirect') {
       duplicateRedirect(id);
     } else if (selectedItem.type === 'filter') {
@@ -366,6 +409,8 @@ function App() {
   function handleToggleEnabled(id, type, checked) {
     if (type === 'header') {
       updateHeader(id, 'enabled', checked);
+    } else if (type === 'responseHeader') {
+      updateResponseHeader(id, 'enabled', checked);
     } else if (type === 'redirect') {
       updateRedirect(id, 'enabled', checked);
     } else if (type === 'filter') {
@@ -484,11 +529,13 @@ function App() {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
           headers={currentProfile.requestHeaders || []}
+          responseHeaders={currentProfile.responseHeaders || []}
           redirects={currentProfile.redirects || []}
           filters={currentProfile.filters || []}
           selectedItem={selectedItem}
           onSelectItem={handleSelectItem}
           onAddHeader={addHeader}
+          onAddResponseHeader={addResponseHeader}
           onAddRedirect={addRedirect}
           onAddFilter={addFilter}
           onToggleEnabled={handleToggleEnabled}
