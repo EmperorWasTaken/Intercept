@@ -4,6 +4,15 @@ import Sidebar from './components/Sidebar';
 import DetailPanel from './components/DetailPanel';
 import Modal from './components/Modal';
 import { createRequestHeader, createResponseHeader, createRedirect, createRequestFilter, createBlock, createProfile as createProfileFactory } from '../types';
+import { 
+  loadAllProfiles, 
+  saveAllProfiles, 
+  getActiveProfileId, 
+  setActiveProfileId,
+  getGlobalEnabled,
+  setGlobalEnabled as setGlobalEnabledStorage,
+  deleteProfile as deleteProfileStorage
+} from '../storage';
 
 function App() {
   const [profiles, setProfiles] = useState([]);
@@ -14,7 +23,7 @@ function App() {
 
   useEffect(() => {
     loadProfiles();
-    loadGlobalEnabled();
+    loadGlobalEnabledState();
     
     // Listen for rule errors from background script
     const handleMessage = (message) => {
@@ -30,30 +39,29 @@ function App() {
     };
   }, []);
 
-  async function loadGlobalEnabled() {
-    const data = await chrome.storage.local.get(['globalEnabled']);
-    setGlobalEnabled(data.globalEnabled !== false);
+  async function loadGlobalEnabledState() {
+    const enabled = await getGlobalEnabled();
+    setGlobalEnabled(enabled);
   }
 
   async function toggleGlobalEnabled() {
     const newValue = !globalEnabled;
     setGlobalEnabled(newValue);
-    await chrome.storage.local.set({ globalEnabled: newValue });
+    await setGlobalEnabledStorage(newValue);
     notifyBackgroundToUpdate();
   }
 
   async function loadProfiles() {
-    const data = await chrome.storage.local.get(['profiles', 'activeProfileId']);
-    const loadedProfiles = data.profiles || [];
+    const loadedProfiles = await loadAllProfiles();
     setProfiles(loadedProfiles);
     
-    const activeId = data.activeProfileId;
+    const activeId = await getActiveProfileId();
     const active = loadedProfiles.find(p => p.id === activeId) || loadedProfiles[0];
     setCurrentProfile(active);
   }
 
   async function saveProfiles(updatedProfiles, shouldUpdateRules = false) {
-    await chrome.storage.local.set({ profiles: updatedProfiles });
+    await saveAllProfiles(updatedProfiles);
     setProfiles(updatedProfiles);
     if (shouldUpdateRules) {
       notifyBackgroundToUpdate();
@@ -61,7 +69,7 @@ function App() {
   }
 
   async function switchProfile(profileId) {
-    await chrome.storage.local.set({ activeProfileId: profileId });
+    await setActiveProfileId(profileId);
     const profile = profiles.find(p => p.id === profileId);
     setCurrentProfile(profile);
     setSelectedItem(null);
@@ -76,7 +84,7 @@ function App() {
 
     const updated = [...profiles, newProfile];
     await saveProfiles(updated);
-    await chrome.storage.local.set({ activeProfileId: newProfile.id });
+    await setActiveProfileId(newProfile.id);
     setCurrentProfile(newProfile);
     setSelectedItem(null);
   }
@@ -101,10 +109,11 @@ function App() {
       async () => {
         const updated = profiles.filter(p => p.id !== profileId);
         await saveProfiles(updated);
+        await deleteProfileStorage(profileId);
 
         if (profileId === currentProfile.id) {
           const newActive = updated[0];
-          await chrome.storage.local.set({ activeProfileId: newActive.id });
+          await setActiveProfileId(newActive.id);
           setCurrentProfile(newActive);
           setSelectedItem(null);
         }

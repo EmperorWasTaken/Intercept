@@ -14,18 +14,21 @@ export default defineConfig({
           copyFileSync(distHtml, 'dist/popup.html');
         }
         copyFileSync('manifest.json', 'dist/manifest.json');
-        copyFileSync('src/background.js', 'dist/background.js');
-        copyFileSync('src/rules.js', 'dist/rules.js');
         
         if (!existsSync('dist/images')) {
-          mkdirSync('dist/images');
+          mkdirSync('dist/images', { recursive: true });
         }
-        copyFileSync('images/logo_enabled_16.png', 'dist/images/logo_enabled_16.png');
-        copyFileSync('images/logo_enabled_48.png', 'dist/images/logo_enabled_48.png');
-        copyFileSync('images/logo_enabled_128.png', 'dist/images/logo_enabled_128.png');
-        copyFileSync('images/logo_disabled_16.png', 'dist/images/logo_disabled_16.png');
-        copyFileSync('images/logo_disabled_48.png', 'dist/images/logo_disabled_48.png');
-        copyFileSync('images/logo_disabled_128.png', 'dist/images/logo_disabled_128.png');
+        const images = [
+          'logo_enabled_16.png',
+          'logo_enabled_48.png', 
+          'logo_enabled_128.png',
+          'logo_disabled_16.png',
+          'logo_disabled_48.png',
+          'logo_disabled_128.png'
+        ];
+        images.forEach(img => {
+          copyFileSync(`images/${img}`, `dist/images/${img}`);
+        });
       }
     }
   ],
@@ -33,12 +36,19 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
-      input: resolve(__dirname, 'src/popup/popup.html'),
+      input: {
+        popup: resolve(__dirname, 'src/popup/popup.html'),
+        background: resolve(__dirname, 'src/background.js')
+      },
       output: {
-        entryFileNames: 'popup.js',
+        entryFileNames: (chunkInfo) => {
+          return chunkInfo.name === 'background' ? 'background.js' : '[name].js';
+        },
+        chunkFileNames: 'chunks/[name]-[hash].js',
         assetFileNames: (assetInfo) => {
           if (assetInfo.name === 'popup.html') return 'popup.html';
-          return '[name].[ext]';
+          if (assetInfo.name.endsWith('.css')) return '[name].css';
+          return 'assets/[name].[ext]';
         }
       }
     }

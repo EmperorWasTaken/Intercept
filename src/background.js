@@ -1,4 +1,12 @@
 import { applyRules, clearAllRules } from './rules.js';
+import { 
+  loadAllProfiles, 
+  saveAllProfiles, 
+  getActiveProfileId, 
+  setActiveProfileId,
+  getGlobalEnabled,
+  migrateFromLocalStorage 
+} from './storage.js';
 
 const defaultProfile = {
   id: 'default',
@@ -12,7 +20,7 @@ const defaultProfile = {
 };
 
 async function updateBadge() {
-  const { globalEnabled } = await chrome.storage.local.get(['globalEnabled']);
+  const globalEnabled = await getGlobalEnabled();
   
   if (globalEnabled === false) {
     chrome.action.setIcon({
@@ -34,20 +42,22 @@ async function updateBadge() {
 }
 
 async function initializeStorage() {
-  const { profiles, activeProfileId } = await chrome.storage.local.get(['profiles', 'activeProfileId']);
+  const profiles = await loadAllProfiles();
   
-  if (!profiles) {
-    await chrome.storage.local.set({
-      profiles: [defaultProfile],
-      activeProfileId: 'default'
-    });
+  if (!profiles || profiles.length === 0) {
+    await saveAllProfiles([defaultProfile]);
+    await setActiveProfileId('default');
   }
 }
 
 async function loadActiveProfile() {
+  await migrateFromLocalStorage();
+  
   await initializeStorage();
   
-  const { profiles, activeProfileId, globalEnabled } = await chrome.storage.local.get(['profiles', 'activeProfileId', 'globalEnabled']);
+  const profiles = await loadAllProfiles();
+  const activeProfileId = await getActiveProfileId();
+  const globalEnabled = await getGlobalEnabled();
   
   if (!profiles || !Array.isArray(profiles)) {
     console.error('Intercept: No profiles found after initialization');
