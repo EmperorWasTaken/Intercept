@@ -18,7 +18,7 @@ chrome.runtime.onInstalled.addListener(async () => {
     });
   }
   
-  updateBadge();
+  await loadActiveProfile();
 });
 
 async function updateBadge() {
@@ -78,6 +78,11 @@ async function clearAllRules() {
 }
 
 chrome.runtime.onStartup.addListener(loadActiveProfile);
+
+self.addEventListener('activate', () => {
+  loadActiveProfile();
+});
+
 loadActiveProfile();
 
 async function applyRules(profile) {
