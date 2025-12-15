@@ -1,6 +1,6 @@
 {
   "name": "intercept",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "type": "module",
   "description": "",
   "main": "index.js",

@@ -15,6 +15,7 @@ export default defineConfig({
         }
         copyFileSync('manifest.json', 'dist/manifest.json');
         copyFileSync('src/background.js', 'dist/background.js');
+        copyFileSync('src/rules.js', 'dist/rules.js');
         
         if (!existsSync('dist/images')) {
           mkdirSync('dist/images');
