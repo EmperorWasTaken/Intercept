@@ -7,6 +7,7 @@ import {
   getGlobalEnabled,
   migrateFromLocalStorage 
 } from './storage.js';
+import { trackProfileActivation } from './stats.js';
 
 const defaultProfile = {
   id: 'default',
@@ -51,34 +52,38 @@ async function initializeStorage() {
 }
 
 async function loadActiveProfile() {
-  await migrateFromLocalStorage();
-  
-  await initializeStorage();
-  
-  const profiles = await loadAllProfiles();
-  const activeProfileId = await getActiveProfileId();
-  const globalEnabled = await getGlobalEnabled();
-  
-  if (!profiles || !Array.isArray(profiles)) {
-    console.error('Intercept: No profiles found after initialization');
-    return;
+  try {
+    await migrateFromLocalStorage();
+    await initializeStorage();
+    
+    const profiles = await loadAllProfiles();
+    const activeProfileId = await getActiveProfileId();
+    const globalEnabled = await getGlobalEnabled();
+    
+    if (!profiles || !Array.isArray(profiles)) {
+      console.error('Intercept: No profiles found after initialization');
+      return;
+    }
+    
+    if (globalEnabled === false) {
+      await clearAllRules();
+      await updateBadge();
+      return;
+    }
+    
+    const activeProfile = profiles.find(p => p.id === activeProfileId);
+    
+    if (activeProfile) {
+      await applyRules(activeProfile);
+      await trackProfileActivation(activeProfile.id, activeProfile.name);
+    } else {
+      console.error('Intercept: Active profile not found:', activeProfileId);
+    }
+    
+    await updateBadge();
+  } catch (error) {
+    console.error('Intercept: Failed to load profile:', error);
   }
-  
-  if (globalEnabled === false) {
-    await clearAllRules();
-    updateBadge();
-    return;
-  }
-  
-  const activeProfile = profiles.find(p => p.id === activeProfileId);
-  
-  if (activeProfile) {
-    await applyRules(activeProfile);
-  } else {
-    console.error('Intercept: Active profile not found:', activeProfileId);
-  }
-  
-  updateBadge();
 }
 
 chrome.runtime.onInstalled.addListener(async () => {
