@@ -45,12 +45,14 @@ export default function DetailPanel({
           {type === 'header' && 'Request Header'}
           {type === 'responseHeader' && 'Response Header'}
           {type === 'redirect' && 'URL Redirect'}
+          {type === 'block' && 'Block Request'}
           {type === 'filter' && 'URL Filter'}
         </h2>
 
         {type === 'header' && <HeaderForm item={item} onUpdate={onUpdate} onDelete={onDelete} onDuplicate={onDuplicate} isResponse={false} />}
         {type === 'responseHeader' && <HeaderForm item={item} onUpdate={onUpdate} onDelete={onDelete} onDuplicate={onDuplicate} isResponse={true} />}
         {type === 'redirect' && <RedirectForm item={item} onUpdate={onUpdate} onDelete={onDelete} onDuplicate={onDuplicate} />}
+        {type === 'block' && <BlockForm item={item} onUpdate={onUpdate} onDelete={onDelete} onDuplicate={onDuplicate} />}
         {type === 'filter' && <FilterForm item={item} onUpdate={onUpdate} onDelete={onDelete} onDuplicate={onDuplicate} />}
       </div>
     </div>
@@ -336,6 +338,55 @@ function FilterForm({ item, onUpdate, onDelete, onDuplicate }) {
           placeholder="e.g., *://*.example.com/*"
           className="w-full bg-bg-secondary text-text-primary border border-border rounded-md px-3 py-2 focus:outline-none focus:border-primary font-mono text-sm"
         />
+      </FormField>
+
+      <FormField label="Comment (optional)">
+        <textarea
+          value={item.comment || ''}
+          onChange={(e) => onUpdate(item.id, 'comment', e.target.value)}
+          placeholder=""
+          rows={3}
+          className="w-full bg-bg-secondary text-text-primary border border-border rounded-md px-3 py-2 focus:outline-none focus:border-primary resize-y"
+        />
+      </FormField>
+
+      <div className="pt-4 flex gap-2">
+        <button
+          onClick={() => onDuplicate(item.id)}
+          className="px-4 py-2 bg-bg-tertiary hover:bg-bg-primary border border-border text-text-primary rounded-md text-sm font-medium transition-colors flex items-center gap-2"
+          title="Duplicate"
+        >
+          <CopyPlus size={16} />
+          Duplicate
+        </button>
+        <button
+          onClick={() => onDelete(item.id)}
+          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-2"
+          title="Delete"
+        >
+          <Trash size={16} />
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function BlockForm({ item, onUpdate, onDelete, onDuplicate }) {
+  return (
+    <div className="space-y-4">
+
+      <FormField label="URL Pattern">
+        <input
+          type="text"
+          value={item.pattern}
+          onChange={(e) => onUpdate(item.id, 'pattern', e.target.value)}
+          placeholder="e.g., *://*.ads.example.com/* or .*\\.ads\\..*"
+          className="w-full bg-bg-secondary text-text-primary border border-border rounded-md px-3 py-2 focus:outline-none focus:border-primary font-mono text-sm"
+        />
+        <p className="mt-1 text-xs text-text-tertiary">
+          Blocks requests matching this pattern. Use regex patterns like <code className="text-primary">.*\.ads\..*</code> or wildcards like <code className="text-primary">*://*/analytics/*</code>
+        </p>
       </FormField>
 
       <FormField label="Comment (optional)">

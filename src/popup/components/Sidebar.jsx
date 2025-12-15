@@ -4,13 +4,15 @@ import { CirclePlus } from 'lucide-react';
 export default function Sidebar({ 
   headers,
   responseHeaders,
-  redirects, 
+  redirects,
+  blocks,
   filters, 
   selectedItem, 
   onSelectItem,
   onAddHeader,
   onAddResponseHeader,
   onAddRedirect,
+  onAddBlock,
   onAddFilter,
   onToggleEnabled,
   onManageProfiles
@@ -58,6 +60,16 @@ export default function Sidebar({
         selectedItem={selectedItem}
         onSelectItem={onSelectItem}
         onAdd={onAddRedirect}
+        onToggleEnabled={onToggleEnabled}
+      />
+
+      <SidebarSection
+        title="Block Requests"
+        items={blocks}
+        type="block"
+        selectedItem={selectedItem}
+        onSelectItem={onSelectItem}
+        onAdd={onAddBlock}
         onToggleEnabled={onToggleEnabled}
       />
 

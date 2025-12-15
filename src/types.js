@@ -29,6 +29,13 @@ export const createRequestFilter = (value = '') => ({
   comment: ''
 });
 
+export const createBlock = (pattern = '') => ({
+  id: crypto.randomUUID(),
+  enabled: true,
+  pattern,
+  comment: ''
+});
+
 export const createProfile = (name = 'New Profile') => ({
   id: crypto.randomUUID(),
   name,
@@ -36,5 +43,6 @@ export const createProfile = (name = 'New Profile') => ({
   requestHeaders: [],
   responseHeaders: [],
   redirects: [],
+  blocks: [],
   filters: []
 });

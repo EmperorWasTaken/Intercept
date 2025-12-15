@@ -134,6 +134,33 @@ export async function applyRules(profile) {
         });
       });
     
+    profile.blocks
+      ?.filter(b => b.enabled && b.pattern)
+      .forEach(block => {
+        const isRegexPattern = /[\[\](){}^$+?|\\]/.test(block.pattern) || /\.\*/.test(block.pattern);
+        
+        const condition = isRegexPattern
+          ? {
+              regexFilter: block.pattern,
+              resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest', 'script', 'image', 'stylesheet', 'font', 'media'],
+              excludedDomains: EXCLUDED_DOMAINS
+            }
+          : {
+              urlFilter: block.pattern,
+              resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest', 'script', 'image', 'stylesheet', 'font', 'media'],
+              excludedDomains: EXCLUDED_DOMAINS
+            };
+        
+        rulesToAdd.push({
+          id: ruleId++,
+          priority: 3,
+          action: {
+            type: 'block'
+          },
+          condition: condition
+        });
+      });
+    
     if (rulesToAdd.length > 0) {
       await chrome.declarativeNetRequest.updateDynamicRules({
         addRules: rulesToAdd

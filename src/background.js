@@ -7,6 +7,7 @@ const defaultProfile = {
   requestHeaders: [],
   responseHeaders: [],
   redirects: [],
+  blocks: [],
   filters: []
 };
 

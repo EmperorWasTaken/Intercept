@@ -3,7 +3,7 @@ import ProfileSelector from './components/ProfileSelector';
 import Sidebar from './components/Sidebar';
 import DetailPanel from './components/DetailPanel';
 import Modal from './components/Modal';
-import { createRequestHeader, createResponseHeader, createRedirect, createRequestFilter, createProfile as createProfileFactory } from '../types';
+import { createRequestHeader, createResponseHeader, createRedirect, createRequestFilter, createBlock, createProfile as createProfileFactory } from '../types';
 
 function App() {
   const [profiles, setProfiles] = useState([]);
@@ -281,6 +281,43 @@ function App() {
     }
   }
 
+  function addBlock() {
+    const newBlock = createBlock('');
+    updateCurrentProfile({
+      blocks: [...(currentProfile.blocks || []), newBlock]
+    });
+  }
+
+  function updateBlock(id, field, value) {
+    const updated = currentProfile.blocks.map(b =>
+      b.id === id ? { ...b, [field]: value } : b
+    );
+    const shouldUpdate = field === 'enabled' || field === 'pattern';
+    updateCurrentProfile({ blocks: updated }, shouldUpdate);
+    
+    if (selectedItem?.item.id === id) {
+      setSelectedItem({ ...selectedItem, item: { ...selectedItem.item, [field]: value } });
+    }
+  }
+
+  function deleteBlock(id) {
+    updateCurrentProfile({
+      blocks: currentProfile.blocks.filter(b => b.id !== id)
+    }, true);
+  }
+
+  function duplicateBlock(id) {
+    const block = currentProfile.blocks.find(b => b.id === id);
+    if (block) {
+      const duplicated = createBlock(block.pattern);
+      duplicated.enabled = block.enabled;
+      duplicated.comment = block.comment;
+      updateCurrentProfile({
+        blocks: [...currentProfile.blocks, duplicated]
+      }, true);
+    }
+  }
+
   async function handleImport(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -371,6 +408,8 @@ function App() {
       updateResponseHeader(id, field, value);
     } else if (selectedItem.type === 'redirect') {
       updateRedirect(id, field, value);
+    } else if (selectedItem.type === 'block') {
+      updateBlock(id, field, value);
     } else if (selectedItem.type === 'filter') {
       updateFilter(id, field, value);
     }
@@ -385,6 +424,8 @@ function App() {
       deleteResponseHeader(id);
     } else if (selectedItem.type === 'redirect') {
       deleteRedirect(id);
+    } else if (selectedItem.type === 'block') {
+      deleteBlock(id);
     } else if (selectedItem.type === 'filter') {
       deleteFilter(id);
     }
@@ -401,6 +442,8 @@ function App() {
       duplicateResponseHeader(id);
     } else if (selectedItem.type === 'redirect') {
       duplicateRedirect(id);
+    } else if (selectedItem.type === 'block') {
+      duplicateBlock(id);
     } else if (selectedItem.type === 'filter') {
       duplicateFilter(id);
     }
@@ -413,6 +456,8 @@ function App() {
       updateResponseHeader(id, 'enabled', checked);
     } else if (type === 'redirect') {
       updateRedirect(id, 'enabled', checked);
+    } else if (type === 'block') {
+      updateBlock(id, 'enabled', checked);
     } else if (type === 'filter') {
       updateFilter(id, 'enabled', checked);
     }
@@ -531,12 +576,14 @@ function App() {
           headers={currentProfile.requestHeaders || []}
           responseHeaders={currentProfile.responseHeaders || []}
           redirects={currentProfile.redirects || []}
+          blocks={currentProfile.blocks || []}
           filters={currentProfile.filters || []}
           selectedItem={selectedItem}
           onSelectItem={handleSelectItem}
           onAddHeader={addHeader}
           onAddResponseHeader={addResponseHeader}
           onAddRedirect={addRedirect}
+          onAddBlock={addBlock}
           onAddFilter={addFilter}
           onToggleEnabled={handleToggleEnabled}
           onManageProfiles={handleManageProfiles}
