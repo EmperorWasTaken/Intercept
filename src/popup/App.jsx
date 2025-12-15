@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import ProfileSelector from './components/ProfileSelector';
 import Sidebar from './components/Sidebar';
 import DetailPanel from './components/DetailPanel';
+import ValidationPanel from './components/ValidationPanel';
 import Modal from './components/Modal';
 import { createRequestHeader, createResponseHeader, createRedirect, createRequestFilter, createBlock, createProfile as createProfileFactory } from '../types';
 import { 
@@ -476,6 +477,10 @@ function App() {
     setSelectedItem({ type: 'profiles' });
   }
 
+  function handleValidate() {
+    setSelectedItem({ type: 'validate' });
+  }
+
   function handleCreateProfile(name) {
     if (!name || !name.trim()) return;
 
@@ -596,20 +601,25 @@ function App() {
           onAddFilter={addFilter}
           onToggleEnabled={handleToggleEnabled}
           onManageProfiles={handleManageProfiles}
+          onValidate={handleValidate}
         />
         
-        <DetailPanel
-          selectedItem={selectedItem}
-          onUpdate={handleUpdateItem}
-          onDelete={handleDeleteItem}
-          onDuplicate={handleDuplicateItem}
-          onShowModal={showModal}
-          profiles={profiles}
-          currentProfile={currentProfile}
-          onCreateProfile={handleCreateProfile}
-          onUpdateProfile={handleUpdateProfile}
-          onDeleteProfile={handleDeleteProfileFromPanel}
-        />
+        {selectedItem?.type === 'validate' ? (
+          <ValidationPanel currentProfile={currentProfile} />
+        ) : (
+          <DetailPanel
+            selectedItem={selectedItem}
+            onUpdate={handleUpdateItem}
+            onDelete={handleDeleteItem}
+            onDuplicate={handleDuplicateItem}
+            onShowModal={showModal}
+            profiles={profiles}
+            currentProfile={currentProfile}
+            onCreateProfile={handleCreateProfile}
+            onUpdateProfile={handleUpdateProfile}
+            onDeleteProfile={handleDeleteProfileFromPanel}
+          />
+        )}
       </div>
 
       <Modal

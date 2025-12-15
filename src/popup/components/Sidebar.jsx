@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CirclePlus, Search, X } from 'lucide-react';
+import { CirclePlus, Search, X, Shield } from 'lucide-react';
 
 export default function Sidebar({ 
   headers,
@@ -15,7 +15,8 @@ export default function Sidebar({
   onAddBlock,
   onAddFilter,
   onToggleEnabled,
-  onManageProfiles
+  onManageProfiles,
+  onValidate
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showEnabledOnly, setShowEnabledOnly] = useState(false);
@@ -64,6 +65,18 @@ export default function Sidebar({
           <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
+        </div>
+        
+        <div 
+          className={`flex items-center justify-between p-3 cursor-pointer hover:bg-bg-tertiary ${
+            selectedItem?.type === 'validate' ? 'bg-bg-tertiary border-l-2 border-primary' : ''
+          }`}
+          onClick={onValidate}
+        >
+          <span className="text-sm font-medium text-text-primary flex items-center gap-2">
+            <Shield size={16} />
+            Validate & Test
+          </span>
         </div>
       </div>
 
