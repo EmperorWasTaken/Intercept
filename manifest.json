@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Intercept",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Manage HTTP request headers, URL redirects, and URL filters with multiple profiles.",
   "permissions": [
     "declarativeNetRequest",
