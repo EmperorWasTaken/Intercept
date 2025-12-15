@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CirclePlus, Search, X, Shield } from 'lucide-react';
+import { CirclePlus, Search, X, Shield, BarChart3, FolderOpen } from 'lucide-react';
 
 export default function Sidebar({ 
   headers,
@@ -16,7 +16,8 @@ export default function Sidebar({
   onAddFilter,
   onToggleEnabled,
   onManageProfiles,
-  onValidate
+  onValidate,
+  onStats
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showEnabledOnly, setShowEnabledOnly] = useState(false);
@@ -61,10 +62,10 @@ export default function Sidebar({
           }`}
           onClick={onManageProfiles}
         >
-          <span className="text-sm font-medium text-text-primary">Profiles</span>
-          <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
+          <span className="text-sm font-medium text-text-primary flex items-center gap-2">
+            <FolderOpen size={16} />
+            Profiles
+          </span>
         </div>
         
         <div 
@@ -76,6 +77,18 @@ export default function Sidebar({
           <span className="text-sm font-medium text-text-primary flex items-center gap-2">
             <Shield size={16} />
             Validate & Test
+          </span>
+        </div>
+        
+        <div 
+          className={`flex items-center justify-between p-3 cursor-pointer hover:bg-bg-tertiary ${
+            selectedItem?.type === 'stats' ? 'bg-bg-tertiary border-l-2 border-primary' : ''
+          }`}
+          onClick={onStats}
+        >
+          <span className="text-sm font-medium text-text-primary flex items-center gap-2">
+            <BarChart3 size={16} />
+            Statistics
           </span>
         </div>
       </div>

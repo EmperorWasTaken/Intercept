@@ -3,6 +3,7 @@ import ProfileSelector from './components/ProfileSelector';
 import Sidebar from './components/Sidebar';
 import DetailPanel from './components/DetailPanel';
 import ValidationPanel from './components/ValidationPanel';
+import StatsPanel from './components/StatsPanel';
 import Modal from './components/Modal';
 import { createRequestHeader, createResponseHeader, createRedirect, createRequestFilter, createBlock, createProfile as createProfileFactory } from '../types';
 import { 
@@ -14,6 +15,7 @@ import {
   setGlobalEnabled as setGlobalEnabledStorage,
   deleteProfile as deleteProfileStorage
 } from '../storage';
+import { trackRuleToggle, trackRuleEdit, trackProfileActivation } from '../stats';
 
 function App() {
   const [profiles, setProfiles] = useState([]);
@@ -26,7 +28,6 @@ function App() {
     loadProfiles();
     loadGlobalEnabledState();
     
-    // Listen for rule errors from background script
     const handleMessage = (message) => {
       if (message.action === 'ruleError') {
         alert(`Error applying rules: ${message.error}\n\nCheck your regex patterns for headers, redirects, and filters.`);
@@ -74,6 +75,7 @@ function App() {
     const profile = profiles.find(p => p.id === profileId);
     setCurrentProfile(profile);
     setSelectedItem(null);
+    await trackProfileActivation(profileId, profile.name);
     notifyBackgroundToUpdate();
   }
 
@@ -136,6 +138,7 @@ function App() {
     updateCurrentProfile({
       requestHeaders: [...(currentProfile.requestHeaders || []), newHeader]
     });
+    trackRuleEdit(currentProfile.id, 'header', 'create');
   }
 
   function updateHeader(id, field, value) {
@@ -144,6 +147,10 @@ function App() {
     );
     const shouldUpdate = field === 'enabled' || field === 'name' || field === 'value';
     updateCurrentProfile({ requestHeaders: updated }, shouldUpdate);
+    
+    if (field !== 'enabled') {
+      trackRuleEdit(currentProfile.id, 'header', 'update');
+    }
     
     if (selectedItem?.item.id === id) {
       setSelectedItem({ ...selectedItem, item: { ...selectedItem.item, [field]: value } });
@@ -154,6 +161,7 @@ function App() {
     updateCurrentProfile({
       requestHeaders: currentProfile.requestHeaders.filter(h => h.id !== id)
     }, true);
+    trackRuleEdit(currentProfile.id, 'header', 'delete');
   }
 
   function duplicateHeader(id) {
@@ -173,6 +181,7 @@ function App() {
     updateCurrentProfile({
       responseHeaders: [...(currentProfile.responseHeaders || []), newHeader]
     });
+    trackRuleEdit(currentProfile.id, 'responseHeader', 'create');
   }
 
   function updateResponseHeader(id, field, value) {
@@ -181,6 +190,10 @@ function App() {
     );
     const shouldUpdate = field === 'enabled' || field === 'name' || field === 'value';
     updateCurrentProfile({ responseHeaders: updated }, shouldUpdate);
+    
+    if (field !== 'enabled') {
+      trackRuleEdit(currentProfile.id, 'responseHeader', 'update');
+    }
     
     if (selectedItem?.item.id === id) {
       setSelectedItem({ ...selectedItem, item: { ...selectedItem.item, [field]: value } });
@@ -191,6 +204,7 @@ function App() {
     updateCurrentProfile({
       responseHeaders: currentProfile.responseHeaders.filter(h => h.id !== id)
     }, true);
+    trackRuleEdit(currentProfile.id, 'responseHeader', 'delete');
   }
 
   function duplicateResponseHeader(id) {
@@ -210,6 +224,7 @@ function App() {
     updateCurrentProfile({
       redirects: [...(currentProfile.redirects || []), newRedirect]
     });
+    trackRuleEdit(currentProfile.id, 'redirect', 'create');
   }
 
   function updateRedirect(id, field, value) {
@@ -218,6 +233,10 @@ function App() {
     );
     const shouldUpdate = field === 'enabled' || field === 'from' || field === 'to';
     updateCurrentProfile({ redirects: updated }, shouldUpdate);
+    
+    if (field !== 'enabled') {
+      trackRuleEdit(currentProfile.id, 'redirect', 'update');
+    }
     
     if (selectedItem?.item.id === id) {
       setSelectedItem({ ...selectedItem, item: { ...selectedItem.item, [field]: value } });
@@ -228,6 +247,7 @@ function App() {
     updateCurrentProfile({
       redirects: currentProfile.redirects.filter(r => r.id !== id)
     }, true);
+    trackRuleEdit(currentProfile.id, 'redirect', 'delete');
   }
 
   function duplicateRedirect(id) {
@@ -259,6 +279,7 @@ function App() {
     updateCurrentProfile({
       filters: [...(currentProfile.filters || []), newFilter]
     }, true);
+    trackRuleEdit(currentProfile.id, 'filter', 'create');
   }
 
   function updateFilter(id, field, value) {
@@ -267,6 +288,10 @@ function App() {
     );
     const shouldUpdate = field === 'enabled' || field === 'value';
     updateCurrentProfile({ filters: updated }, shouldUpdate);
+    
+    if (field !== 'enabled') {
+      trackRuleEdit(currentProfile.id, 'filter', 'update');
+    }
     
     if (selectedItem?.item.id === id) {
       setSelectedItem({ ...selectedItem, item: { ...selectedItem.item, [field]: value } });
@@ -277,6 +302,7 @@ function App() {
     updateCurrentProfile({
       filters: currentProfile.filters.filter(f => f.id !== id)
     }, true);
+    trackRuleEdit(currentProfile.id, 'filter', 'delete');
   }
 
   function duplicateFilter(id) {
@@ -296,6 +322,7 @@ function App() {
     updateCurrentProfile({
       blocks: [...(currentProfile.blocks || []), newBlock]
     });
+    trackRuleEdit(currentProfile.id, 'block', 'create');
   }
 
   function updateBlock(id, field, value) {
@@ -304,6 +331,10 @@ function App() {
     );
     const shouldUpdate = field === 'enabled' || field === 'pattern';
     updateCurrentProfile({ blocks: updated }, shouldUpdate);
+    
+    if (field !== 'enabled') {
+      trackRuleEdit(currentProfile.id, 'block', 'update');
+    }
     
     if (selectedItem?.item.id === id) {
       setSelectedItem({ ...selectedItem, item: { ...selectedItem.item, [field]: value } });
@@ -314,6 +345,7 @@ function App() {
     updateCurrentProfile({
       blocks: currentProfile.blocks.filter(b => b.id !== id)
     }, true);
+    trackRuleEdit(currentProfile.id, 'block', 'delete');
   }
 
   function duplicateBlock(id) {
@@ -462,14 +494,19 @@ function App() {
   function handleToggleEnabled(id, type, checked) {
     if (type === 'header') {
       updateHeader(id, 'enabled', checked);
+      trackRuleToggle(currentProfile.id, 'header', checked);
     } else if (type === 'responseHeader') {
       updateResponseHeader(id, 'enabled', checked);
+      trackRuleToggle(currentProfile.id, 'responseHeader', checked);
     } else if (type === 'redirect') {
       updateRedirect(id, 'enabled', checked);
+      trackRuleToggle(currentProfile.id, 'redirect', checked);
     } else if (type === 'block') {
       updateBlock(id, 'enabled', checked);
+      trackRuleToggle(currentProfile.id, 'block', checked);
     } else if (type === 'filter') {
       updateFilter(id, 'enabled', checked);
+      trackRuleToggle(currentProfile.id, 'filter', checked);
     }
   }
 
@@ -479,6 +516,10 @@ function App() {
 
   function handleValidate() {
     setSelectedItem({ type: 'validate' });
+  }
+
+  function handleStats() {
+    setSelectedItem({ type: 'stats' });
   }
 
   function handleCreateProfile(name) {
@@ -602,10 +643,13 @@ function App() {
           onToggleEnabled={handleToggleEnabled}
           onManageProfiles={handleManageProfiles}
           onValidate={handleValidate}
+          onStats={handleStats}
         />
         
         {selectedItem?.type === 'validate' ? (
           <ValidationPanel currentProfile={currentProfile} />
+        ) : selectedItem?.type === 'stats' ? (
+          <StatsPanel />
         ) : (
           <DetailPanel
             selectedItem={selectedItem}
