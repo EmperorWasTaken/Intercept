@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CirclePlus, Search, X, Shield, BarChart3, FolderOpen } from 'lucide-react';
+import { CirclePlus, Search, X } from 'lucide-react';
 
 export default function Sidebar({ 
   headers,
@@ -14,10 +14,7 @@ export default function Sidebar({
   onAddRedirect,
   onAddBlock,
   onAddFilter,
-  onToggleEnabled,
-  onManageProfiles,
-  onValidate,
-  onStats
+  onToggleEnabled
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showEnabledOnly, setShowEnabledOnly] = useState(false);
@@ -55,44 +52,6 @@ export default function Sidebar({
   
   return (
     <div className="w-64 bg-bg-secondary border-r border-border flex flex-col h-full">
-      <div className="border-b border-border shrink-0">
-        <div 
-          className={`flex items-center justify-between p-3 cursor-pointer hover:bg-bg-tertiary ${
-            selectedItem?.type === 'profiles' ? 'bg-bg-tertiary border-l-2 border-primary' : ''
-          }`}
-          onClick={onManageProfiles}
-        >
-          <span className="text-sm font-medium text-text-primary flex items-center gap-2">
-            <FolderOpen size={16} />
-            Profiles
-          </span>
-        </div>
-        
-        <div 
-          className={`flex items-center justify-between p-3 cursor-pointer hover:bg-bg-tertiary ${
-            selectedItem?.type === 'validate' ? 'bg-bg-tertiary border-l-2 border-primary' : ''
-          }`}
-          onClick={onValidate}
-        >
-          <span className="text-sm font-medium text-text-primary flex items-center gap-2">
-            <Shield size={16} />
-            Validate & Test
-          </span>
-        </div>
-        
-        <div 
-          className={`flex items-center justify-between p-3 cursor-pointer hover:bg-bg-tertiary ${
-            selectedItem?.type === 'stats' ? 'bg-bg-tertiary border-l-2 border-primary' : ''
-          }`}
-          onClick={onStats}
-        >
-          <span className="text-sm font-medium text-text-primary flex items-center gap-2">
-            <BarChart3 size={16} />
-            Statistics
-          </span>
-        </div>
-      </div>
-
       <div className="p-3 border-b border-border shrink-0 space-y-2">
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-text-secondary" />

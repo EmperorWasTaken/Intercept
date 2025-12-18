@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import DetailPanel from './components/DetailPanel';
 import ValidationPanel from './components/ValidationPanel';
 import StatsPanel from './components/StatsPanel';
+import SettingsMenu from './components/SettingsMenu';
 import Modal from './components/Modal';
 import { createRequestHeader, createResponseHeader, createRedirect, createRequestFilter, createBlock, createProfile as createProfileFactory } from '../types';
 import { 
@@ -572,7 +573,13 @@ function App() {
       <div className="bg-bg-secondary border-b border-border px-4 py-3 flex items-center justify-between">
         <h1 className="text-xl font-semibold text-text-primary">Intercept</h1>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <ProfileSelector
+            profiles={profiles}
+            currentProfile={currentProfile}
+            onSwitch={switchProfile}
+          />
+          
           <button
             onClick={toggleGlobalEnabled}
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
@@ -596,32 +603,21 @@ function App() {
             {globalEnabled ? 'Enabled' : 'Disabled'}
           </button>
 
-          <div className="flex gap-2">
-            <button 
-              onClick={() => document.getElementById('importFile').click()}
-              className="px-3 py-1.5 bg-bg-tertiary hover:bg-bg-primary border border-border text-text-primary rounded-md text-sm transition-colors"
-            >
-              Import
-            </button>
-            <button 
-              onClick={handleExport}
-              className="px-3 py-1.5 bg-bg-tertiary hover:bg-bg-primary border border-border text-text-primary rounded-md text-sm transition-colors"
-            >
-              Export
-            </button>
-            <input
-              type="file"
-              id="importFile"
-              accept=".json"
-              className="hidden"
-              onChange={handleImport}
-            />
-          </div>
+          <SettingsMenu
+            onManageProfiles={handleManageProfiles}
+            onValidate={handleValidate}
+            onStats={handleStats}
+            onImport={() => document.getElementById('importFile').click()}
+            onExport={handleExport}
+            selectedItem={selectedItem}
+          />
           
-          <ProfileSelector
-            profiles={profiles}
-            currentProfile={currentProfile}
-            onSwitch={switchProfile}
+          <input
+            type="file"
+            id="importFile"
+            accept=".json"
+            className="hidden"
+            onChange={handleImport}
           />
         </div>
       </div>
@@ -641,9 +637,6 @@ function App() {
           onAddBlock={addBlock}
           onAddFilter={addFilter}
           onToggleEnabled={handleToggleEnabled}
-          onManageProfiles={handleManageProfiles}
-          onValidate={handleValidate}
-          onStats={handleStats}
         />
         
         {selectedItem?.type === 'validate' ? (
