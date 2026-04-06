@@ -1,13 +1,14 @@
 import { applyRules, clearAllRules } from './rules.js';
-import { 
-  loadAllProfiles, 
-  saveAllProfiles, 
-  getActiveProfileId, 
+import {
+  loadAllProfiles,
+  saveAllProfiles,
+  getActiveProfileId,
   setActiveProfileId,
   getGlobalEnabled,
-  migrateFromLocalStorage 
+  migrateFromLocalStorage
 } from './storage.js';
 import { trackProfileActivation } from './stats.js';
+import { validateStoredLicense } from './license.js';
 
 const defaultProfile = {
   id: crypto.randomUUID(),
@@ -94,11 +95,32 @@ chrome.runtime.onInstalled.addListener(async () => {
 chrome.runtime.onStartup.addListener(async () => {
   console.log('Intercept: Browser started');
   await loadActiveProfile();
+  validateStoredLicense();
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.action === 'updateRules') {
     loadActiveProfile().then(() => sendResponse({ success: true }));
+    return true;
+  }
+
+  if (message.action === 'importSharedProfile') {
+    const incoming = message.profile;
+    if (!incoming?.name) {
+      sendResponse({ success: false });
+      return true;
+    }
+    (async () => {
+      try {
+        const profiles = await loadAllProfiles();
+        const imported = { ...incoming, id: crypto.randomUUID() };
+        await saveAllProfiles([...profiles, imported]);
+        chrome.runtime.sendMessage({ action: 'profileImported' }).catch(() => {});
+        sendResponse({ success: true });
+      } catch {
+        sendResponse({ success: false });
+      }
+    })();
     return true;
   }
 });

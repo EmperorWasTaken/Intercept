@@ -46,11 +46,14 @@ export default defineConfig({
     rollupOptions: {
       input: {
         popup: resolve(__dirname, 'src/popup/popup.html'),
-        background: resolve(__dirname, 'src/background.js')
+        background: resolve(__dirname, 'src/background.js'),
+        shareBridge: resolve(__dirname, 'src/share-bridge.js')
       },
       output: {
         entryFileNames: (chunkInfo) => {
-          return chunkInfo.name === 'background' ? 'background.js' : '[name].js';
+          if (chunkInfo.name === 'background') return 'background.js';
+          if (chunkInfo.name === 'shareBridge') return 'share-bridge.js';
+          return '[name].js';
         },
         chunkFileNames: 'chunks/[name]-[hash].js',
         assetFileNames: (assetInfo) => {

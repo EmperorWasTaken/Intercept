@@ -27,6 +27,13 @@
     "scripts": ["background.js"],
     "type": "module"
   },
+  "content_scripts": [
+    {
+      "matches": ["https://emperorwastaken.github.io/Intercept/*"],
+      "js": ["share-bridge.js"],
+      "run_at": "document_idle"
+    }
+  ],
   "browser_specific_settings": {
     "gecko": {
       "id": "{7cd6ad95-9894-6788-e0c4-bc375a09108c}",

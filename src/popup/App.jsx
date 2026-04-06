@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import DetailPanel from './components/DetailPanel';
 import ValidationPanel from './components/ValidationPanel';
 import StatsPanel from './components/StatsPanel';
+import LicensePanel from './components/LicensePanel';
 import SettingsMenu from './components/SettingsMenu';
 import Modal from './components/Modal';
 import { createRequestHeader, createResponseHeader, createRedirect, createRequestFilter, createBlock, createProfile as createProfileFactory } from '../types';
@@ -17,6 +18,8 @@ import {
   deleteProfile as deleteProfileStorage
 } from '../storage';
 import { trackRuleToggle, trackRuleEdit, trackProfileActivation } from '../stats';
+import { isPro } from '../license';
+import LZString from 'lz-string';
 
 function App() {
   const [profiles, setProfiles] = useState([]);
@@ -33,6 +36,9 @@ function App() {
     const handleMessage = (message) => {
       if (message.action === 'ruleError') {
         alert(`Error applying rules: ${message.error}\n\nCheck your regex patterns for headers, redirects, and filters.`);
+      }
+      if (message.action === 'profileImported') {
+        loadProfiles();
       }
     };
     
@@ -557,7 +563,33 @@ function App() {
     setSelectedItem({ type: 'stats' });
   }
 
-  function handleCreateProfile(name) {
+  function handleLicense() {
+    setSelectedItem({ type: 'license' });
+  }
+
+  async function handleShare() {
+    if (!(await isPro())) {
+      showModal(
+        'Upgrade to Pro',
+        'Shareable profile links are a Pro feature. Upgrade to share profiles with your team.',
+        () => setSelectedItem({ type: 'license' }),
+        'View Pro License',
+        'primary'
+      );
+      return;
+    }
+    const url = `https://emperorwastaken.github.io/Intercept/share.html#${LZString.compressToEncodedURIComponent(JSON.stringify(currentProfile))}`;
+    await navigator.clipboard.writeText(url);
+    showModal(
+      'Share link copied',
+      `Share this link with your team. Anyone with Intercept installed can import "${currentProfile.name}" in one click.`,
+      null,
+      'Done',
+      'primary'
+    );
+  }
+
+  async function handleCreateProfile(name) {
     if (!name || !name.trim()) return;
 
     const newProfile = createProfileFactory(name.trim());
@@ -641,6 +673,8 @@ function App() {
             onManageProfiles={handleManageProfiles}
             onValidate={handleValidate}
             onStats={handleStats}
+            onLicense={handleLicense}
+            onShare={handleShare}
             onImport={() => document.getElementById('importFile').click()}
             onExport={handleExport}
             selectedItem={selectedItem}
@@ -677,6 +711,8 @@ function App() {
           <ValidationPanel currentProfile={currentProfile} />
         ) : selectedItem?.type === 'stats' ? (
           <StatsPanel />
+        ) : selectedItem?.type === 'license' ? (
+          <LicensePanel />
         ) : (
           <DetailPanel
             selectedItem={selectedItem}

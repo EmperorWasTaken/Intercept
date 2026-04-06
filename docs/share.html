@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intercept — Shared Profile</title>
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0d0d14;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 16px;
+    }
+
+    .card {
+      background: #161622;
+      border: 1px solid #2a2a3d;
+      border-radius: 12px;
+      padding: 32px;
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+      color: #a5b4fc;
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .logo svg { opacity: 0.8; }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #f1f5f9;
+      margin-bottom: 6px;
+      word-break: break-word;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 24px;
+    }
+
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .stat {
+      background: #1e1e2e;
+      border: 1px solid #2a2a3d;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .stat strong { color: #e2e8f0; }
+
+    .rules {
+      border: 1px solid #2a2a3d;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .rules-header {
+      background: #1e1e2e;
+      padding: 8px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+      border-bottom: 1px solid #2a2a3d;
+    }
+
+    .rule {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px;
+      border-bottom: 1px solid #1e1e2e;
+      font-size: 13px;
+    }
+
+    .rule:last-child { border-bottom: none; }
+
+    .rule-type {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      width: 58px;
+      text-align: center;
+    }
+
+    .type-header   { background: #1e3a5f; color: #60a5fa; }
+    .type-response { background: #1e3a5f; color: #34d399; }
+    .type-redirect { background: #2d1e5f; color: #a78bfa; }
+    .type-block    { background: #3b1e1e; color: #f87171; }
+    .type-filter   { background: #1e2d1e; color: #86efac; }
+
+    .rule-name {
+      color: #cbd5e1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .rule-value {
+      color: #64748b;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 160px;
+      font-family: monospace;
+    }
+
+    .more {
+      padding: 8px 14px;
+      font-size: 12px;
+      color: #64748b;
+      text-align: center;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn:not(:disabled):hover { opacity: 0.85; }
+
+    .btn-primary { background: #6366f1; color: #fff; }
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid #2a2a3d;
+      color: #94a3b8;
+      margin-top: 8px;
+    }
+
+    #status {
+      margin-top: 14px;
+      font-size: 13px;
+      text-align: center;
+      min-height: 20px;
+    }
+
+    .status-ok      { color: #34d399; }
+    .status-err     { color: #f87171; }
+    .status-info    { color: #94a3b8; }
+
+    #not-installed {
+      margin-top: 14px;
+      padding: 12px 16px;
+      background: #1e2a1e;
+      border: 1px solid #2a3d2a;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #86efac;
+      text-align: center;
+      display: none;
+    }
+
+    #not-installed a { color: #6ee7b7; }
+
+    .error-card {
+      text-align: center;
+      color: #f87171;
+      padding: 24px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      Intercept
+    </div>
+
+    <div id="content">
+      <div class="error-card">Loading…</div>
+    </div>
+  </div>
+
+  <script>
+    const PREVIEW_LIMIT = 12;
+
+    function typeLabel(type) {
+      const map = {
+        header: ['REQ HDR', 'type-header'],
+        responseHeader: ['RES HDR', 'type-response'],
+        redirect: ['REDIRECT', 'type-redirect'],
+        block: ['BLOCK', 'type-block'],
+        filter: ['FILTER', 'type-filter'],
+      };
+      return map[type] || [type, ''];
+    }
+
+    function escHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function buildRuleRows(profile) {
+      const rows = [];
+      const push = (type, name, value) => rows.push({ type, name, value });
+
+      (profile.requestHeaders  || []).forEach(r => push('header',         r.name,    r.value));
+      (profile.responseHeaders || []).forEach(r => push('responseHeader', r.name,    r.value));
+      (profile.redirects       || []).forEach(r => push('redirect',       r.from,    r.to));
+      (profile.blocks          || []).forEach(r => push('block',          r.pattern, ''));
+      (profile.filters         || []).forEach(r => push('filter',         r.value,   ''));
+
+      return rows;
+    }
+
+    function renderProfile(profile) {
+      const counts = {
+        'Req Headers':  (profile.requestHeaders  || []).length,
+        'Res Headers':  (profile.responseHeaders || []).length,
+        'Redirects':    (profile.redirects       || []).length,
+        'Blocks':       (profile.blocks          || []).length,
+        'Filters':      (profile.filters         || []).length,
+      };
+
+      const totalRules = Object.values(counts).reduce((a, b) => a + b, 0);
+      const rows = buildRuleRows(profile);
+      const preview = rows.slice(0, PREVIEW_LIMIT);
+      const overflow = rows.length - preview.length;
+
+      const statsHtml = Object.entries(counts)
+        .filter(([, n]) => n > 0)
+        .map(([label, n]) => `<div class="stat"><strong>${n}</strong> ${label}</div>`)
+        .join('');
+
+      const rulesHtml = preview.map(({ type, name, value }) => {
+        const [label, cls] = typeLabel(type);
+        return `
+          <div class="rule">
+            <span class="rule-type ${escHtml(cls)}">${escHtml(label)}</span>
+            <span class="rule-name">${escHtml(name)}</span>
+            ${value ? `<span class="rule-value">${escHtml(value)}</span>` : ''}
+          </div>`;
+      }).join('');
+
+      return `
+        <h1>${escHtml(profile.name)}</h1>
+        <p class="subtitle">${totalRules} rule${totalRules !== 1 ? 's' : ''}</p>
+        <div class="stats">${statsHtml || '<div class="stat">Empty profile</div>'}</div>
+        ${totalRules > 0 ? `
+          <div class="rules">
+            <div class="rules-header">Rules</div>
+            ${rulesHtml}
+            ${overflow > 0 ? `<div class="more">+${overflow} more rule${overflow !== 1 ? 's' : ''}</div>` : ''}
+          </div>` : ''}
+        <button class="btn btn-primary" id="importBtn">Import into Intercept</button>
+        <button class="btn btn-secondary" id="copyBtn">Copy share link</button>
+        <div id="status"></div>
+        <div id="not-installed">
+          Intercept isn't detected in this browser.<br>
+          <a href="https://chromewebstore.google.com/detail/intercept" target="_blank">Install Intercept</a> first, then reload this page.
+        </div>`;
+    }
+
+    function setStatus(msg, cls) {
+      const el = document.getElementById('status');
+      if (el) { el.textContent = msg; el.className = cls || ''; }
+    }
+
+    let profile = null;
+    let extensionReady = false;
+
+    try {
+      const hash = location.hash.slice(1);
+      if (!hash) throw new Error('No profile data in URL.');
+      const json = LZString.decompressFromEncodedURIComponent(hash);
+      if (!json) throw new Error('Could not decode profile data.');
+      profile = JSON.parse(json);
+      if (!profile?.name) throw new Error('Invalid profile format.');
+      document.getElementById('content').innerHTML = renderProfile(profile);
+    } catch (e) {
+      document.getElementById('content').innerHTML =
+        `<div class="error-card">⚠ ${escHtml(e.message)}</div>`;
+    }
+
+    if (profile) {
+      document.getElementById('copyBtn').addEventListener('click', () => {
+        navigator.clipboard.writeText(location.href).then(() => {
+          setStatus('Link copied to clipboard.', 'status-ok');
+        });
+      });
+
+      document.getElementById('importBtn').addEventListener('click', () => {
+        if (!extensionReady) {
+          document.getElementById('not-installed').style.display = 'block';
+          return;
+        }
+        document.getElementById('importBtn').disabled = true;
+        setStatus('Importing…', 'status-info');
+        document.dispatchEvent(new CustomEvent('intercept:import', { detail: profile }));
+      });
+
+      document.addEventListener('intercept:importResult', (e) => {
+        document.getElementById('importBtn').disabled = false;
+        if (e.detail?.ok) {
+          setStatus('Profile imported! Open Intercept to use it.', 'status-ok');
+        } else {
+          setStatus('Import failed. Please try again.', 'status-err');
+        }
+      });
+
+      document.addEventListener('intercept:ready', () => {
+        extensionReady = true;
+        setStatus('', '');
+      });
+
+      setTimeout(() => {
+        if (!extensionReady) {
+          document.getElementById('not-installed').style.display = 'block';
+        }
+      }, 1500);
+    }
+  </script>
+</body>
+</html>

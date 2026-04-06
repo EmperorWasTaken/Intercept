@@ -27,5 +27,12 @@
   "background": {
     "service_worker": "background.js",
     "type": "module"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://emperorwastaken.github.io/Intercept/*"],
+      "js": ["share-bridge.js"],
+      "run_at": "document_idle"
+    }
+  ]
 }

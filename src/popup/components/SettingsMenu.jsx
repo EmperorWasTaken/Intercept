@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
-import { Settings, FolderOpen, Shield, BarChart3, Download, Upload } from 'lucide-react';
+import { Settings, FolderOpen, Shield, BarChart3, Download, Upload, KeyRound, Share2 } from 'lucide-react';
 
-export default function SettingsMenu({ 
-  onManageProfiles, 
-  onValidate, 
-  onStats, 
-  onImport, 
+export default function SettingsMenu({
+  onManageProfiles,
+  onValidate,
+  onStats,
+  onImport,
   onExport,
-  selectedItem 
+  onLicense,
+  onShare,
+  selectedItem
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
@@ -79,6 +81,26 @@ export default function SettingsMenu({
             
             <div className="my-1 border-t border-border" />
             
+            <button
+              onClick={() => handleMenuClick(onLicense)}
+              className={`w-full px-4 py-2.5 text-left text-sm hover:bg-bg-tertiary flex items-center gap-3 transition-colors ${
+                isActive('license') ? 'bg-bg-tertiary text-primary' : 'text-text-primary'
+              }`}
+            >
+              <KeyRound size={16} />
+              <span>Pro License</span>
+            </button>
+
+            <div className="my-1 border-t border-border" />
+
+            <button
+              onClick={() => handleMenuClick(onShare)}
+              className="w-full px-4 py-2.5 text-left text-sm hover:bg-bg-tertiary flex items-center gap-3 text-text-primary transition-colors"
+            >
+              <Share2 size={16} />
+              <span>Share Profile</span>
+            </button>
+
             <button
               onClick={() => handleMenuClick(onImport)}
               className="w-full px-4 py-2.5 text-left text-sm hover:bg-bg-tertiary flex items-center gap-3 text-text-primary transition-colors"
