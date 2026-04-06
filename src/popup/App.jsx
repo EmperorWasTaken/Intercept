@@ -408,15 +408,25 @@ function App() {
         return profile;
       });
     } else {
-      newProfiles = data.profiles || [];
+      newProfiles = data?.profiles || [];
+    }
+
+    if (!Array.isArray(newProfiles)) {
+      throw new Error('Import: profiles must be an array');
     }
     
     const combinedProfiles = [...existingProfiles, ...newProfiles];
     await saveProfiles(combinedProfiles, true);
     
     if (newProfiles.length > 0) {
-      await chrome.storage.local.set({ activeProfileId: newProfiles[0].id });
+      await setActiveProfileId(newProfiles[0].id);
       setCurrentProfile(newProfiles[0]);
+      notifyBackgroundToUpdate();
+    }
+
+    if (typeof data?.globalEnabled === 'boolean') {
+      setGlobalEnabled(data.globalEnabled);
+      await setGlobalEnabledStorage(data.globalEnabled);
     }
     } catch (error) {
       alert('Invalid file format. Please select a valid JSON file.');
@@ -425,8 +435,14 @@ function App() {
   }
 
   async function handleExport() {
-    const data = await chrome.storage.local.get(['profiles', 'activeProfileId']);
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const exported = {
+      schema: 'intercept-export-v1',
+      exportedAt: new Date().toISOString(),
+      profiles: await loadAllProfiles(),
+      activeProfileId: await getActiveProfileId(),
+      globalEnabled: await getGlobalEnabled()
+    };
+    const blob = new Blob([JSON.stringify(exported, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -529,7 +545,7 @@ function App() {
     const newProfile = createProfileFactory(name.trim());
     const updated = [...profiles, newProfile];
     saveProfiles(updated);
-    chrome.storage.local.set({ activeProfileId: newProfile.id });
+    setActiveProfileId(newProfile.id);
     setCurrentProfile(newProfile);
   }
 
@@ -553,7 +569,7 @@ function App() {
 
     if (profileId === currentProfile.id) {
       const newActive = updated[0];
-      chrome.storage.local.set({ activeProfileId: newActive.id });
+      setActiveProfileId(newActive.id);
       setCurrentProfile(newActive);
     }
     
