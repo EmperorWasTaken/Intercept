@@ -54,8 +54,9 @@ export default defineConfig({
         },
         chunkFileNames: 'chunks/[name]-[hash].js',
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name === 'popup.html') return 'popup.html';
-          if (assetInfo.name.endsWith('.css')) return '[name].css';
+          const name = assetInfo.name ?? '';
+          if (name === 'popup.html') return 'popup.html';
+          if (name.endsWith('.css')) return '[name].css';
           return 'assets/[name].[ext]';
         }
       }

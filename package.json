@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/EmperorWasTaken/Intercept#readme",
   "dependencies": {
-    "lucide-react": "^0.554.0",
+    "lucide-react": "^1.7.0",
     "lz-string": "^1.5.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
@@ -32,11 +32,11 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.17",
     "@types/chrome": "^0.1.31",
-    "@vitejs/plugin-react": "^5.1.1",
+    "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.4.22",
-    "cross-env": "^7.0.3",
+    "cross-env": "^10.1.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.17",
-    "vite": "^7.2.4"
+    "vite": "^8.0.5"
   }
 }
