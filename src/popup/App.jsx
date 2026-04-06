@@ -24,6 +24,7 @@ function App() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [globalEnabled, setGlobalEnabled] = useState(true);
   const [modal, setModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
+  const [importPending, setImportPending] = useState(null);
 
   useEffect(() => {
     loadProfiles();
@@ -153,7 +154,7 @@ function App() {
       trackRuleEdit(currentProfile.id, 'header', 'update');
     }
     
-    if (selectedItem?.item.id === id) {
+    if (selectedItem?.item?.id === id) {
       setSelectedItem({ ...selectedItem, item: { ...selectedItem.item, [field]: value } });
     }
   }
@@ -196,7 +197,7 @@ function App() {
       trackRuleEdit(currentProfile.id, 'responseHeader', 'update');
     }
     
-    if (selectedItem?.item.id === id) {
+    if (selectedItem?.item?.id === id) {
       setSelectedItem({ ...selectedItem, item: { ...selectedItem.item, [field]: value } });
     }
   }
@@ -239,7 +240,7 @@ function App() {
       trackRuleEdit(currentProfile.id, 'redirect', 'update');
     }
     
-    if (selectedItem?.item.id === id) {
+    if (selectedItem?.item?.id === id) {
       setSelectedItem({ ...selectedItem, item: { ...selectedItem.item, [field]: value } });
     }
   }
@@ -294,7 +295,7 @@ function App() {
       trackRuleEdit(currentProfile.id, 'filter', 'update');
     }
     
-    if (selectedItem?.item.id === id) {
+    if (selectedItem?.item?.id === id) {
       setSelectedItem({ ...selectedItem, item: { ...selectedItem.item, [field]: value } });
     }
   }
@@ -337,7 +338,7 @@ function App() {
       trackRuleEdit(currentProfile.id, 'block', 'update');
     }
     
-    if (selectedItem?.item.id === id) {
+    if (selectedItem?.item?.id === id) {
       setSelectedItem({ ...selectedItem, item: { ...selectedItem.item, [field]: value } });
     }
   }
@@ -364,83 +365,100 @@ function App() {
   async function handleImport(e) {
     const file = e.target.files[0];
     if (!file) return;
+    e.target.value = '';
 
     try {
       const text = await file.text();
       const data = JSON.parse(text);
-      
-      const existingProfiles = profiles;
+
       let newProfiles = [];
-      
+
       if (Array.isArray(data)) {
-      newProfiles = data.map(modHeaderProfile => {
-        const profile = createProfileFactory(modHeaderProfile.title || 'Imported Profile');
-        
-        profile.requestHeaders = (modHeaderProfile.headers || [])
-          .filter(h => h.name)
-          .map(h => ({
-            id: crypto.randomUUID(),
-            enabled: h.enabled !== false,
-            name: h.name,
-            value: h.value || '',
-            comment: h.comment || ''
-          }));
-        
-        profile.redirects = (modHeaderProfile.urlReplacements || [])
-          .filter(r => r.name && r.value)
-          .map(r => ({
-            id: crypto.randomUUID(),
-            enabled: r.enabled !== false,
-            from: r.name,
-            to: r.value,
-            comment: r.comment || ''
-          }));
-        
-        profile.filters = (modHeaderProfile.urlFilters || [])
-          .filter(f => f.urlRegex)
-          .map(f => ({
-            id: crypto.randomUUID(),
-            enabled: f.enabled !== false,
-            value: f.urlRegex,
-            comment: f.comment || ''
-          }));
-        
-        return profile;
-      });
-    } else {
-      newProfiles = data?.profiles || [];
-    }
+        newProfiles = data.map(modHeaderProfile => {
+          const profile = createProfileFactory(modHeaderProfile.title || 'Imported Profile');
+          profile.requestHeaders = (modHeaderProfile.headers || [])
+            .filter(h => h.name)
+            .map(h => ({ id: crypto.randomUUID(), enabled: h.enabled !== false, name: h.name, value: h.value || '', comment: h.comment || '' }));
+          profile.redirects = (modHeaderProfile.urlReplacements || [])
+            .filter(r => r.name && r.value)
+            .map(r => ({ id: crypto.randomUUID(), enabled: r.enabled !== false, from: r.name, to: r.value, comment: r.comment || '' }));
+          profile.filters = (modHeaderProfile.urlFilters || [])
+            .filter(f => f.urlRegex)
+            .map(f => ({ id: crypto.randomUUID(), enabled: f.enabled !== false, value: f.urlRegex, comment: f.comment || '' }));
+          return profile;
+        });
+      } else {
+        newProfiles = data?.profiles || [];
+      }
 
-    if (!Array.isArray(newProfiles)) {
-      throw new Error('Import: profiles must be an array');
-    }
-    
-    const combinedProfiles = [...existingProfiles, ...newProfiles];
-    await saveProfiles(combinedProfiles, true);
-    
-    if (newProfiles.length > 0) {
-      await setActiveProfileId(newProfiles[0].id);
-      setCurrentProfile(newProfiles[0]);
-      notifyBackgroundToUpdate();
-    }
+      if (!Array.isArray(newProfiles) || newProfiles.length === 0) {
+        throw new Error('No profiles found in file');
+      }
 
-    if (typeof data?.globalEnabled === 'boolean') {
-      setGlobalEnabled(data.globalEnabled);
-      await setGlobalEnabledStorage(data.globalEnabled);
-    }
+      const conflicts = newProfiles.filter(p => profiles.some(e => e.id === p.id));
+
+      if (conflicts.length > 0) {
+        const names = conflicts.map(p => `"${p.name}"`).join(', ');
+        setImportPending({ newProfiles, globalEnabled: data?.globalEnabled });
+        setModal({
+          isOpen: true,
+          title: 'Import Conflict',
+          message: `${conflicts.length === 1 ? 'A profile' : 'Profiles'} with the same ID already exist: ${names}. Replace the existing profile(s) or import as a new copy?`,
+          confirmText: 'Replace',
+          confirmStyle: 'primary',
+          onConfirm: () => finishImport(newProfiles, data?.globalEnabled, false),
+          onSecondary: () => finishImport(newProfiles, data?.globalEnabled, true),
+          secondaryText: 'Import as Copy',
+          cancelText: 'Cancel',
+        });
+      } else {
+        await finishImport(newProfiles, data?.globalEnabled, false);
+      }
     } catch (error) {
       alert('Invalid file format. Please select a valid JSON file.');
       console.error('Import error:', error);
     }
   }
 
+  async function finishImport(newProfiles, globalEnabledValue, asCopy) {
+    const profilesToImport = asCopy
+      ? newProfiles.map(p => ({ ...p, id: crypto.randomUUID(), name: `${p.name} (copy)` }))
+      : newProfiles;
+
+    const combined = [...profiles];
+    for (const imported of profilesToImport) {
+      const existingIndex = combined.findIndex(p => p.id === imported.id);
+      if (existingIndex >= 0) {
+        combined[existingIndex] = imported;
+      } else {
+        combined.push(imported);
+      }
+    }
+
+    await saveProfiles(combined, true);
+    await setActiveProfileId(profilesToImport[0].id);
+    setCurrentProfile(profilesToImport[0]);
+    setSelectedItem(null);
+    notifyBackgroundToUpdate();
+
+    if (typeof globalEnabledValue === 'boolean') {
+      setGlobalEnabled(globalEnabledValue);
+      await setGlobalEnabledStorage(globalEnabledValue);
+    }
+
+    setImportPending(null);
+  }
+
   async function handleExport() {
+    const profiles = await loadAllProfiles();
+    const activeProfileId = await getActiveProfileId();
+    const globalEnabled = await getGlobalEnabled();
     const exported = {
       schema: 'intercept-export-v1',
       exportedAt: new Date().toISOString(),
-      profiles: await loadAllProfiles(),
-      activeProfileId: await getActiveProfileId(),
-      globalEnabled: await getGlobalEnabled()
+      profiles,
+      activeProfileId,
+      globalEnabled
     };
     const blob = new Blob([JSON.stringify(exported, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -683,6 +701,8 @@ function App() {
         onConfirm={modal.onConfirm}
         confirmText={modal.confirmText}
         confirmStyle={modal.confirmStyle}
+        onSecondary={modal.onSecondary}
+        secondaryText={modal.secondaryText}
       />
     </div>
   );

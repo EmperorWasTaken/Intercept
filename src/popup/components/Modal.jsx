@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 
-export default function Modal({ isOpen, onClose, title, message, onConfirm, confirmText = 'Confirm', cancelText = 'Cancel', confirmStyle = 'danger' }) {
+export default function Modal({ isOpen, onClose, title, message, onConfirm, confirmText = 'Confirm', cancelText = 'Cancel', confirmStyle = 'danger', onSecondary, secondaryText }) {
   if (!isOpen) return null;
 
   const confirmClasses = confirmStyle === 'danger' 
@@ -39,6 +39,17 @@ export default function Modal({ isOpen, onClose, title, message, onConfirm, conf
           >
             {confirmText}
           </button>
+          {onSecondary && (
+            <button
+              onClick={() => {
+                onSecondary();
+                onClose();
+              }}
+              className="flex-1 px-4 py-2 bg-bg-tertiary hover:bg-bg-primary border border-border text-text-primary rounded-md text-sm font-medium transition-colors"
+            >
+              {secondaryText}
+            </button>
+          )}
           <button
             onClick={onClose}
             className="flex-1 px-4 py-2 bg-bg-tertiary hover:bg-bg-primary border border-border text-text-primary rounded-md text-sm font-medium transition-colors"

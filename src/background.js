@@ -10,7 +10,7 @@ import {
 import { trackProfileActivation } from './stats.js';
 
 const defaultProfile = {
-  id: 'default',
+  id: crypto.randomUUID(),
   name: 'Default Profile',
   active: true,
   requestHeaders: [],
@@ -47,7 +47,7 @@ async function initializeStorage() {
   
   if (!profiles || profiles.length === 0) {
     await saveAllProfiles([defaultProfile]);
-    await setActiveProfileId('default');
+    await setActiveProfileId(defaultProfile.id);
   }
 }
 
