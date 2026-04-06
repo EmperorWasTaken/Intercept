@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
-import { KeyRound, CheckCircle, XCircle, Loader } from 'lucide-react';
+import { KeyRound, CheckCircle, XCircle, Loader, Cloud, CloudOff, RefreshCw } from 'lucide-react';
 import { getLicenseData, activateLicense, removeLicense } from '../../license.js';
+import { signInWithGoogle, signOut, getCloudUser } from '../../cloud-auth.js';
+import { syncProfiles, getLastSynced } from '../../cloud-sync.js';
+import { loadAllProfiles, saveAllProfiles } from '../../storage.js';
 
 export default function LicensePanel() {
   const [licenseData, setLicenseData] = useState(null);
@@ -112,6 +115,141 @@ function ActiveState({ licenseData, onRemove, working }) {
       <p className="text-text-secondary text-xs leading-relaxed">
         Removing the license frees up one activation slot so you can use it on another device.
       </p>
+
+      <div className="border-t border-border pt-4">
+        <CloudSyncPanel />
+      </div>
+    </div>
+  );
+}
+
+function CloudSyncPanel() {
+  const [cloudUser, setCloudUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
+  const [lastSynced, setLastSynced] = useState(null);
+  const [syncStatus, setSyncStatus] = useState(null);
+
+  useEffect(() => {
+    getCloudUser().then(u => {
+      setCloudUser(u);
+      setLoadingUser(false);
+    });
+    getLastSynced().then(setLastSynced);
+  }, []);
+
+  async function handleSignIn() {
+    setSigningIn(true);
+    setSyncStatus(null);
+    try {
+      const user = await signInWithGoogle();
+      setCloudUser(user);
+    } catch (err) {
+      setSyncStatus({ ok: false, message: err.message });
+    }
+    setSigningIn(false);
+  }
+
+  async function handleSignOut() {
+    await signOut();
+    setCloudUser(null);
+    setLastSynced(null);
+    setSyncStatus(null);
+  }
+
+  async function handleSync() {
+    setSyncing(true);
+    setSyncStatus(null);
+    try {
+      const profiles = await loadAllProfiles();
+      const result = await syncProfiles(profiles, saveAllProfiles);
+      if (result.success) {
+        const ts = await getLastSynced();
+        setLastSynced(ts);
+        setSyncStatus({
+          ok: true,
+          message: result.added > 0
+            ? `Synced. ${result.added} new profile${result.added > 1 ? 's' : ''} added from cloud.`
+            : 'Synced successfully.',
+        });
+      } else {
+        setSyncStatus({ ok: false, message: result.error });
+      }
+    } catch (err) {
+      setSyncStatus({ ok: false, message: err.message });
+    }
+    setSyncing(false);
+  }
+
+  const lastSyncedLabel = lastSynced
+    ? new Date(lastSynced).toLocaleString()
+    : null;
+
+  if (loadingUser) {
+    return (
+      <div className="flex items-center gap-2 text-text-secondary text-sm">
+        <Loader size={14} className="animate-spin" />
+        <span>Loading cloud sync…</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-2 text-text-primary text-sm font-medium">
+        {cloudUser ? <Cloud size={15} className="text-primary" /> : <CloudOff size={15} className="text-text-secondary" />}
+        <span>Cloud sync</span>
+      </div>
+
+      {cloudUser ? (
+        <>
+          <div className="bg-bg-secondary border border-border rounded-md p-3 flex flex-col gap-1.5 text-sm">
+            <Row label="Signed in as" value={cloudUser.email} />
+            {lastSyncedLabel && <Row label="Last synced" value={lastSyncedLabel} />}
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-dark text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
+              {syncing ? 'Syncing…' : 'Sync now'}
+            </button>
+            <button
+              onClick={handleSignOut}
+              className="px-3 py-1.5 bg-bg-tertiary hover:bg-bg-primary border border-border text-text-secondary hover:text-text-primary rounded-md text-sm transition-colors"
+            >
+              Sign out
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="text-text-secondary text-xs leading-relaxed">
+            Sign in to sync your profiles across browsers and devices.
+          </p>
+          <button
+            onClick={handleSignIn}
+            disabled={signingIn}
+            className="w-fit flex items-center gap-2 px-3 py-1.5 bg-bg-secondary hover:bg-bg-tertiary border border-border text-text-primary rounded-md text-sm transition-colors disabled:opacity-50"
+          >
+            {signingIn
+              ? <><Loader size={13} className="animate-spin" />Signing in…</>
+              : <>Sign in with Google</>
+            }
+          </button>
+        </>
+      )}
+
+      {syncStatus && (
+        <div className={`flex items-center gap-1.5 text-xs ${syncStatus.ok ? 'text-green-400' : 'text-red-400'}`}>
+          {syncStatus.ok ? <CheckCircle size={13} /> : <XCircle size={13} />}
+          <span>{syncStatus.message}</span>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,6 +9,7 @@ import {
 } from './storage.js';
 import { trackProfileActivation } from './stats.js';
 import { validateStoredLicense } from './license.js';
+import { supabase } from './supabase.js';
 
 const defaultProfile = {
   id: crypto.randomUUID(),
@@ -101,6 +102,49 @@ chrome.runtime.onStartup.addListener(async () => {
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.action === 'updateRules') {
     loadActiveProfile().then(() => sendResponse({ success: true }));
+    return true;
+  }
+
+  if (message.action === 'startGoogleSignIn') {
+    (async () => {
+      try {
+        const redirectTo = chrome.identity.getRedirectURL();
+
+        const { data: oauthData, error: oauthError } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: { skipBrowserRedirect: true, redirectTo },
+        });
+        if (oauthError) throw oauthError;
+
+        const callbackUrl = await new Promise((resolve, reject) => {
+          chrome.identity.launchWebAuthFlow({ url: oauthData.url, interactive: true }, (resultUrl) => {
+            if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+            else if (!resultUrl) reject(new Error('No callback URL returned'));
+            else resolve(resultUrl);
+          });
+        });
+
+        const cbUrl = new URL(callbackUrl);
+        const hashParams = new URLSearchParams(cbUrl.hash.slice(1));
+        const access_token = hashParams.get('access_token');
+        const refresh_token = hashParams.get('refresh_token');
+
+        let user;
+        if (access_token) {
+          const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
+          if (error) throw error;
+          user = data.user;
+        } else {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(callbackUrl);
+          if (error) throw error;
+          user = data.user;
+        }
+
+        sendResponse({ success: true, user });
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
     return true;
   }
 

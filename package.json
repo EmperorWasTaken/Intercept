@@ -1,6 +1,6 @@
 {
   "name": "intercept",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "type": "module",
   "description": "",
   "main": "index.js",
@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/EmperorWasTaken/Intercept#readme",
   "dependencies": {
+    "@supabase/supabase-js": "^2.101.1",
     "lucide-react": "^1.7.0",
     "lz-string": "^1.5.0",
     "react": "^19.2.0",
