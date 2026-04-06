@@ -303,23 +303,40 @@
       if (el) { el.textContent = msg; el.className = cls || ''; }
     }
 
-    let profile = null;
     let extensionReady = false;
 
-    try {
-      const hash = location.hash.slice(1);
-      if (!hash) throw new Error('No profile data in URL.');
-      const json = LZString.decompressFromEncodedURIComponent(hash);
-      if (!json) throw new Error('Could not decode profile data.');
-      profile = JSON.parse(json);
-      if (!profile?.name) throw new Error('Invalid profile format.');
-      document.getElementById('content').innerHTML = renderProfile(profile);
-    } catch (e) {
-      document.getElementById('content').innerHTML =
-        `<div class="error-card">⚠ ${escHtml(e.message)}</div>`;
-    }
+    document.addEventListener('intercept:importResult', (e) => {
+      const btn = document.getElementById('importBtn');
+      if (btn) btn.disabled = false;
+      if (e.detail?.ok) {
+        setStatus('Profile imported! Open Intercept to use it.', 'status-ok');
+      } else {
+        setStatus('Import failed. Please try again.', 'status-err');
+      }
+    });
 
-    if (profile) {
+    document.addEventListener('intercept:ready', () => {
+      extensionReady = true;
+      setStatus('', '');
+    });
+
+    function load() {
+      let profile = null;
+
+      try {
+        const hash = location.hash.slice(1);
+        if (!hash) throw new Error('No profile data in URL.');
+        const json = LZString.decompressFromEncodedURIComponent(hash);
+        if (!json) throw new Error('Could not decode profile data.');
+        profile = JSON.parse(json);
+        if (!profile?.name) throw new Error('Invalid profile format.');
+        document.getElementById('content').innerHTML = renderProfile(profile);
+      } catch (e) {
+        document.getElementById('content').innerHTML =
+          `<div class="error-card">⚠ ${escHtml(e.message)}</div>`;
+        return;
+      }
+
       document.getElementById('copyBtn').addEventListener('click', () => {
         navigator.clipboard.writeText(location.href).then(() => {
           setStatus('Link copied to clipboard.', 'status-ok');
@@ -336,26 +353,16 @@
         document.dispatchEvent(new CustomEvent('intercept:import', { detail: profile }));
       });
 
-      document.addEventListener('intercept:importResult', (e) => {
-        document.getElementById('importBtn').disabled = false;
-        if (e.detail?.ok) {
-          setStatus('Profile imported! Open Intercept to use it.', 'status-ok');
-        } else {
-          setStatus('Import failed. Please try again.', 'status-err');
-        }
-      });
-
-      document.addEventListener('intercept:ready', () => {
-        extensionReady = true;
-        setStatus('', '');
-      });
-
-      setTimeout(() => {
-        if (!extensionReady) {
-          document.getElementById('not-installed').style.display = 'block';
-        }
-      }, 1500);
+      if (!extensionReady) {
+        setTimeout(() => {
+          const el = document.getElementById('not-installed');
+          if (el && !extensionReady) el.style.display = 'block';
+        }, 1500);
+      }
     }
+
+    load();
+    window.addEventListener('hashchange', load);
   </script>
 </body>
 </html>
