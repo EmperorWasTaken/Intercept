@@ -19,18 +19,16 @@ export async function clearAllRules() {
   }
 }
 
+let applyInProgress = false;
+
 export async function applyRules(profile) {
+  if (applyInProgress) return;
+  applyInProgress = true;
   try {
     const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
-    if (existingRules.length > 0) {
-      await chrome.declarativeNetRequest.updateDynamicRules({
-        removeRuleIds: existingRules.map(r => r.id),
-        addRules: []
-      });
-    }
-    
+
     const rulesToAdd = [];
-    let ruleId = Math.floor(Date.now() / 1000);
+    let ruleId = 1;
     
     const activeFilters = (profile.filters || [])
       .filter(f => f.enabled && f.value)
@@ -161,26 +159,14 @@ export async function applyRules(profile) {
         });
       });
     
-    if (rulesToAdd.length > 0) {
-      await chrome.declarativeNetRequest.updateDynamicRules({
-        addRules: rulesToAdd
-      });
-      console.log(`Intercept: Applied ${rulesToAdd.length} rules`);
-    } else {
-      console.log('Intercept: No rules to apply');
-    }
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: existingRules.map(r => r.id),
+      addRules: rulesToAdd
+    });
+    console.log(`Intercept: Applied ${rulesToAdd.length} rules`);
   } catch (error) {
     console.error('Intercept: Error applying rules:', error);
-    try {
-      const rules = await chrome.declarativeNetRequest.getDynamicRules();
-      if (rules.length > 0) {
-        await chrome.declarativeNetRequest.updateDynamicRules({
-          removeRuleIds: rules.map(r => r.id),
-          addRules: []
-        });
-      }
-    } catch (cleanupError) {
-      console.error('Intercept: Error during cleanup:', cleanupError);
-    }
+  } finally {
+    applyInProgress = false;
   }
 }
