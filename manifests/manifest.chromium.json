@@ -8,8 +8,7 @@
     "declarativeNetRequestWithHostAccess",
     "declarativeNetRequestFeedback",
     "storage",
-    "activeTab",
-    "identity"
+    "activeTab"
   ],
   "host_permissions": ["<all_urls>"],
   "action": {
