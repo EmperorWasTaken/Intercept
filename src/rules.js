@@ -7,6 +7,12 @@ const EXCLUDED_DOMAINS = [
   "msedge.api.cdp.microsoft.com"
 ];
 
+const ALL_RESOURCE_TYPES = [
+  'main_frame', 'sub_frame', 'stylesheet', 'script', 'image',
+  'font', 'object', 'xmlhttprequest', 'ping', 'csp_report',
+  'media', 'websocket', 'webtransport', 'webbundle', 'other'
+];
+
 export async function clearAllRules() {
   const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
   const ruleIdsToRemove = existingRules.map(r => r.id);
@@ -47,12 +53,12 @@ export async function applyRules(profile) {
           const condition = isRegexPattern
             ? {
                 regexFilter: filter,
-                resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest'],
+                resourceTypes: ALL_RESOURCE_TYPES,
                 excludedDomains: EXCLUDED_DOMAINS
               }
             : {
                 urlFilter: filter,
-                resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest'],
+                resourceTypes: ALL_RESOURCE_TYPES,
                 excludedDomains: EXCLUDED_DOMAINS
               };
           
@@ -81,12 +87,12 @@ export async function applyRules(profile) {
           const condition = isRegexPattern
             ? {
                 regexFilter: filter,
-                resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest'],
+                resourceTypes: ALL_RESOURCE_TYPES,
                 excludedDomains: EXCLUDED_DOMAINS
               }
             : {
                 urlFilter: filter,
-                resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest'],
+                resourceTypes: ALL_RESOURCE_TYPES,
                 excludedDomains: EXCLUDED_DOMAINS
               };
           
@@ -126,7 +132,7 @@ export async function applyRules(profile) {
           },
           condition: {
             regexFilter: redirect.from,
-            resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest'],
+            resourceTypes: ALL_RESOURCE_TYPES,
             excludedDomains: EXCLUDED_DOMAINS
           }
         });
@@ -140,12 +146,12 @@ export async function applyRules(profile) {
         const condition = isRegexPattern
           ? {
               regexFilter: block.pattern,
-              resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest', 'script', 'image', 'stylesheet', 'font', 'media'],
+              resourceTypes: ALL_RESOURCE_TYPES,
               excludedDomains: EXCLUDED_DOMAINS
             }
           : {
               urlFilter: block.pattern,
-              resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest', 'script', 'image', 'stylesheet', 'font', 'media'],
+              resourceTypes: ALL_RESOURCE_TYPES,
               excludedDomains: EXCLUDED_DOMAINS
             };
         
