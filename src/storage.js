@@ -14,11 +14,59 @@ function decompressProfile(compressed) {
   }
 }
 
-export async function saveProfile(profile) {
+const QUOTA_BYTES_PER_ITEM = chrome.storage.sync.QUOTA_BYTES_PER_ITEM ?? 8192;
+const QUOTA_BYTES = chrome.storage.sync.QUOTA_BYTES ?? 102400;
+
+export class StorageQuotaError extends Error {
+  constructor(kind, { profileName, bytes, limit, cause } = {}) {
+    super(cause?.message || `Storage quota exceeded (${kind})`);
+    this.name = 'StorageQuotaError';
+    this.kind = kind;
+    this.profileName = profileName;
+    this.bytes = bytes;
+    this.limit = limit;
+  }
+}
+
+function getItemSize(key, value) {
+  return new TextEncoder().encode(key + JSON.stringify(value)).length;
+}
+
+function toStorageError(error) {
+  const message = error?.message || '';
+  if (/QUOTA_BYTES_PER_ITEM|QuotaBytesPerItem/i.test(message)) {
+    return new StorageQuotaError('item', { limit: QUOTA_BYTES_PER_ITEM, cause: error });
+  }
+  if (/MAX_WRITE_OPERATIONS|MaxWriteOperations|MAX_SUSTAINED_WRITE/i.test(message)) {
+    return new StorageQuotaError('rate', { cause: error });
+  }
+  if (/quota|MAX_ITEMS|MaxItems/i.test(message)) {
+    return new StorageQuotaError('total', { limit: QUOTA_BYTES, cause: error });
+  }
+  return error;
+}
+
+function buildProfileItem(profile) {
+  const key = `profile_${profile.id}`;
   const compressed = compressProfile(profile);
-  await chrome.storage.sync.set({
-    [`profile_${profile.id}`]: compressed
-  });
+  const bytes = getItemSize(key, compressed);
+  if (bytes > QUOTA_BYTES_PER_ITEM) {
+    throw new StorageQuotaError('item', { profileName: profile.name, bytes, limit: QUOTA_BYTES_PER_ITEM });
+  }
+  return { key, compressed };
+}
+
+async function syncSet(items) {
+  try {
+    await chrome.storage.sync.set(items);
+  } catch (error) {
+    throw toStorageError(error);
+  }
+}
+
+export async function saveProfile(profile) {
+  const { key, compressed } = buildProfileItem(profile);
+  await syncSet({ [key]: compressed });
 }
 
 export async function loadProfile(profileId) {
@@ -64,12 +112,13 @@ export async function saveAllProfiles(profiles) {
     index === self.findIndex(p => p.id === profile.id)
   );
   
-  const profileIds = uniqueProfiles.map(p => p.id);
-  
-  await chrome.storage.sync.set({ profileIds });
-  
-  const savePromises = uniqueProfiles.map(profile => saveProfile(profile));
-  await Promise.all(savePromises);
+  const items = { profileIds: uniqueProfiles.map(p => p.id) };
+  for (const profile of uniqueProfiles) {
+    const { key, compressed } = buildProfileItem(profile);
+    items[key] = compressed;
+  }
+
+  await syncSet(items);
 }
 
 export async function deleteProfile(profileId) {

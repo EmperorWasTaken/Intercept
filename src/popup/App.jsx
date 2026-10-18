@@ -14,10 +14,12 @@ import {
   setActiveProfileId,
   getGlobalEnabled,
   setGlobalEnabled as setGlobalEnabledStorage,
-  deleteProfile as deleteProfileStorage
+  deleteProfile as deleteProfileStorage,
+  StorageQuotaError
 } from '../storage';
 import { trackRuleToggle, trackRuleEdit, trackProfileActivation } from '../stats';
 import LZString from 'lz-string';
+import { X } from 'lucide-react';
 
 function App() {
   const [profiles, setProfiles] = useState([]);
@@ -26,6 +28,7 @@ function App() {
   const [globalEnabled, setGlobalEnabled] = useState(true);
   const [modal, setModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
   const [importPending, setImportPending] = useState(null);
+  const [saveError, setSaveError] = useState(null);
 
   useEffect(() => {
     loadProfiles();
@@ -69,11 +72,51 @@ function App() {
   }
 
   async function saveProfiles(updatedProfiles, shouldUpdateRules = false) {
-    await saveAllProfiles(updatedProfiles);
+    try {
+      await saveAllProfiles(updatedProfiles);
+    } catch (error) {
+      console.error('Failed to save profiles:', error);
+      setSaveError(describeSaveError(error));
+      await restoreFromStorage();
+      return false;
+    }
     setProfiles(updatedProfiles);
+    setSaveError(null);
     if (shouldUpdateRules) {
       notifyBackgroundToUpdate();
     }
+    return true;
+  }
+
+  function describeSaveError(error) {
+    if (!(error instanceof StorageQuotaError)) {
+      return `Your last change could not be saved: ${error?.message || 'unknown error'}`;
+    }
+    if (error.kind === 'item') {
+      const name = error.profileName ? `"${error.profileName}"` : 'This profile';
+      const size = error.bytes ? ` (${(error.bytes / 1024).toFixed(1)} KB of ${(error.limit / 1024).toFixed(0)} KB)` : '';
+      return `${name} has reached the browser's size limit for a single profile${size}. Your last change was not saved. Remove or shorten some rules, or move some of them into another profile.`;
+    }
+    if (error.kind === 'rate') {
+      return 'The browser limits how many changes can be saved per minute, and that limit was reached. Your last change was not saved. Wait a moment and try again.';
+    }
+    return "The browser's sync storage for Intercept is full. Your last change was not saved. Delete unused profiles or rules to free up space.";
+  }
+
+  const itemListKeys = { header: 'requestHeaders', responseHeader: 'responseHeaders', redirect: 'redirects', block: 'blocks', filter: 'filters' };
+
+  async function restoreFromStorage() {
+    const stored = await loadAllProfiles();
+    if (stored.length === 0) return;
+    setProfiles(stored);
+    const restored = stored.find(p => p.id === currentProfile?.id) || stored[0];
+    setCurrentProfile(restored);
+    setSelectedItem(prev => {
+      const listKey = itemListKeys[prev?.type];
+      if (!listKey || !prev.item) return prev;
+      const item = (restored[listKey] || []).find(i => i.id === prev.item.id);
+      return item ? { ...prev, item } : null;
+    });
   }
 
   async function switchProfile(profileId) {
@@ -92,7 +135,7 @@ function App() {
     const newProfile = createProfileFactory(name);
 
     const updated = [...profiles, newProfile];
-    await saveProfiles(updated);
+    if (!await saveProfiles(updated)) return;
     await setActiveProfileId(newProfile.id);
     setCurrentProfile(newProfile);
     setSelectedItem(null);
@@ -117,7 +160,7 @@ function App() {
       'Are you sure you want to delete this profile? This action cannot be undone.',
       async () => {
         const updated = profiles.filter(p => p.id !== profileId);
-        await saveProfiles(updated);
+        if (!await saveProfiles(updated)) return;
         await deleteProfileStorage(profileId);
 
         if (profileId === currentProfile.id) {
@@ -439,7 +482,8 @@ function App() {
       }
     }
 
-    await saveProfiles(combined, true);
+    setImportPending(null);
+    if (!await saveProfiles(combined, true)) return;
     await setActiveProfileId(profilesToImport[0].id);
     setCurrentProfile(profilesToImport[0]);
     setSelectedItem(null);
@@ -449,8 +493,6 @@ function App() {
       setGlobalEnabled(globalEnabledValue);
       await setGlobalEnabledStorage(globalEnabledValue);
     }
-
-    setImportPending(null);
   }
 
   async function handleExport() {
@@ -578,7 +620,7 @@ function App() {
 
     const newProfile = createProfileFactory(name.trim());
     const updated = [...profiles, newProfile];
-    saveProfiles(updated);
+    if (!await saveProfiles(updated)) return;
     setActiveProfileId(newProfile.id);
     setCurrentProfile(newProfile);
   }
@@ -593,13 +635,14 @@ function App() {
     }
   }
 
-  function handleDeleteProfileFromPanel(profileId) {
+  async function handleDeleteProfileFromPanel(profileId) {
     if (profiles.length === 1) {
       return;
     }
 
     const updated = profiles.filter(p => p.id !== profileId);
-    saveProfiles(updated);
+    if (!await saveProfiles(updated)) return;
+    await deleteProfileStorage(profileId);
 
     if (profileId === currentProfile.id) {
       const newActive = updated[0];
@@ -672,6 +715,19 @@ function App() {
           />
         </div>
       </div>
+
+      {saveError && (
+        <div role="alert" className="bg-red-900/40 border-b border-red-700 px-4 py-2 flex items-start gap-3 text-sm text-red-100">
+          <span className="flex-1">{saveError}</span>
+          <button
+            onClick={() => setSaveError(null)}
+            className="text-red-200 hover:text-white transition-colors"
+            aria-label="Dismiss"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
